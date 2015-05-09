@@ -1,0 +1,26 @@
+Environment:
+    OS  Debian
+    gcc 4.8.3
+    GNU make 4.0
+
+Language:
+    C
+
+Directory tree and file list:
+    because the path is hard coded in makefile and some python codes, 
+    you have to make sure the directory tree is the same to guarantee 
+    proper program behavior. 
+    
+    /                   : root folder of all programs and data
+    /Readme             : this file
+    /Report.pdf         : HW2 report
+    /48_idx_chr.map_b   : mapping file
+    /label/             : label file of training data
+    /fbank/             : fbank feature
+    /mfcc/              : mfcc feature
+    /feature/           : extracted feature
+    /src/svm-c/         : svm_struct source code
+
+Usage:
+    $ make
+    $ make run

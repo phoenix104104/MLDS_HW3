@@ -21,10 +21,10 @@ fprintf('Input data size = %d\n', num_data);
 fprintf('Feature dimension = %d\n', num_dim);
 
 opts.num_class      = num_class;
-opts.learning_rate  = 0.05;
+opts.learning_rate  = 0.001;
 opts.batch_size     = 256;
 opts.epoch          = 100;
-opts.weight_decay   = 0.005;
+opts.weight_decay   = 0.0005;
 opts.momentum       = 0.9;
 opts.dropout_prob   = 0.5;
 opts.hidden         = [256];

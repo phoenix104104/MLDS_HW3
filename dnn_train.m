@@ -65,7 +65,8 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
                 model.delta{i} = ( model.W{i+1}' * model.delta{i+1} ) .* dadz;
             end
 
-            model = sgd(model, x_batch);
+            %model = sgd(model, x_batch);
+            model = adagrad(model, x_batch);
         end % end of batch
         
         % calculate E_in
@@ -116,5 +117,41 @@ function model = sgd(model, X)
     
         model.W{i} = lambda * model.W{i} + model.mW{i};
         model.B{i} = model.B{i} + model.mB{i};
+    end
+end
+
+function model = adagrad(model, X)
+    
+    % mini-batch gradient descent
+    % X in R^(data_size x feature_dim)
+    
+    n_layer     = length(model.W);
+    batch_size  = size(X, 1);
+    eta         = model.opts.learning_rate;
+    lambda      = 1 - model.opts.weight_decay * eta;
+    eps         = 1e-2; % TODO: need tuning
+    
+    dCdW = model.delta{1} * X';
+    dCdB = sum( model.delta{1}, 2);
+    
+    model.sW{1} = model.sW{1} + dCdW.^2;
+    model.sB{1} = model.sB{1} + dCdB.^2;
+    
+    lr = eta ./ max( sqrt( model.sW{1} ), eps);
+    model.W{1} = lambda * model.W{1} - lr ./ batch_size .* dCdW;
+    
+    lr = eta ./ max( sqrt( model.sB{1} ), eps);
+    model.B{1} = model.B{1} - lr ./ batch_size .* dCdB;
+    
+    for i = 2:n_layer
+        
+        dCdW = model.delta{i} * model.a{i-1}';
+        dCdB = sum( model.delta{i}, 2);
+        
+        lr = eta ./ max( sqrt( model.sW{i} ), eps);
+        model.W{i} = lambda * model.W{i} - lr ./ batch_size .* dCdW;
+
+        lr = eta ./ max( sqrt( model.sB{i} ), eps);
+        model.B{i} = model.B{i} - lr ./ batch_size .* dCdB;
     end
 end

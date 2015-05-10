@@ -1,6 +1,8 @@
-function cost = cross_entropy_loss(y_gt, y_pred)
+function cost = cross_entropy_loss(Y_gt, Y_pred)
     
-    cost = -y_gt .* log(y_pred);
-    cost = mean( sum(cost, 1) );
+    % Y in R^(num_class x num_data)
+    
+    cost = -Y_gt .* log(Y_pred);
+    cost = mean( sum(cost, 2) );
 
 end

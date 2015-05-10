@@ -10,14 +10,15 @@ function y_pred = dnn_predict(model, X)
     
     n_layer = length(model.W);
 
-    a = X;
+    a = X';
     for i = 1:n_layer-1
         z = bsxfun(@plus, model.W{i} * a, model.B{i});
         a = activation(z);
+        a = a * (1 - model.opts.dropout_prob);
     end
 
     % last layer
     z = bsxfun(@plus, model.W{n_layer} * a, model.B{n_layer});
     y_pred = softmax(z);
-    
+    y_pred = y_pred';
 end

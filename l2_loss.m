@@ -1,5 +1,8 @@
-function cost = l2_loss(y1, y2)
+function cost = l2_loss(y_gt, y_pred)
     
-    cost = sum( (y1(:) - y2(:)).^2 );
+    % y \in R^(Dim x BatchSize)
+
+    cost = (y_gt - y_pred).^2;
+    cost = mean( sum(cost, 1) );
     
 end

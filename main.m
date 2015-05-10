@@ -1,5 +1,5 @@
 data_dir = '../data';
-
+% 
 % feature_name = 'mnist-train.dense.raw';
 % filename = fullfile(data_dir, feature_name);
 % [y_train, X_train] = dnn_load_data(filename);
@@ -27,7 +27,7 @@ opts.epoch          = 100;
 opts.weight_decay   = 0.0005;
 opts.momentum       = 0.9;
 opts.dropout_prob   = 0.5;
-opts.hidden         = [625];
+opts.hidden         = [256];
 opts.structure      = [num_dim, opts.hidden, num_class];
 opts.activation     = 'ReLU';
 

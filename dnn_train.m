@@ -7,7 +7,6 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
     batch_size      = model.opts.batch_size;
     n_layer         = length(model.W);
     n_batch         = ceil(N/batch_size);
-    eta             = model.opts.learning_rate;
     dropout_prob    = model.opts.dropout_prob;
     epoch           = model.opts.epoch;
     
@@ -24,7 +23,9 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
     fprintf('==============================================\n');
     fprintf('Structure \t\t= %s\n', num2str(model.opts.structure));
     fprintf('Batch Size \t\t= %d\n', batch_size);
-    fprintf('Learning Rate \t= %s\n', num2str(eta));
+    fprintf('Learning Rate \t= %s\n', num2str(model.opts.learning_rate));
+    fprintf('Momentum \t\t= %s\n', num2str(model.opts.momentum));
+    fprintf('Weight decay \t= %s\n', num2str(model.opts.weight_decay));
     fprintf('Activation \t\t= %s\n', model.opts.activation);
     fprintf('Dropout \t\t= %s\n', num2str(dropout_prob));
     fprintf('Total epoch \t= %d\n', epoch);
@@ -64,18 +65,7 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
                 model.delta{i} = ( model.W{i+1}' * model.delta{i+1} ) .* dadz;
             end
 
-            % mini-batch gradient descent
-            dCdW = model.delta{1} * x_batch';
-            dCdB = sum( model.delta{1}, 2);
-            model.W{1} = model.W{1} - eta / batch_size * dCdW;
-            model.B{1} = model.B{1} - eta / batch_size * dCdB;
-            for i = 2:n_layer
-                dCdW = model.delta{i} * model.a{i-1}';
-                dCdB = sum( model.delta{i}, 2);
-                model.W{i} = model.W{i} - eta / batch_size * dCdW;
-                model.B{i} = model.B{i} - eta / batch_size * dCdB;
-            end
-
+            model = sgd(model, x_batch);
         end % end of batch
         
         % calculate E_in
@@ -94,4 +84,37 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
 
     end % end of epoch
 
+end
+
+function model = sgd(model, X)
+    
+    % mini-batch gradient descent
+    % X in R^(data_size x feature_dim)
+    
+    n_layer     = length(model.W);
+    batch_size  = size(X, 1);
+    eta         = model.opts.learning_rate;
+    mu          = model.opts.momentum;
+    lambda      = 1 - model.opts.weight_decay * eta;
+    
+    dCdW = model.delta{1} * X';
+    dCdB = sum( model.delta{1}, 2);
+    
+    model.mW{1} = mu * model.mW{1} - eta / batch_size * dCdW;
+    model.mB{1} = mu * model.mB{1} - eta / batch_size * dCdB;
+    
+    model.W{1} = lambda * model.W{1} + model.mW{1};
+    model.B{1} = model.B{1} + model.mB{1};
+    
+    for i = 2:n_layer
+        
+        dCdW = model.delta{i} * model.a{i-1}';
+        dCdB = sum( model.delta{i}, 2);
+        
+        model.mW{i} = mu * model.mW{i} - eta / batch_size * dCdW;
+        model.mB{i} = mu * model.mB{i} - eta / batch_size * dCdB;
+    
+        model.W{i} = lambda * model.W{i} + model.mW{i};
+        model.B{i} = model.B{i} + model.mB{i};
+    end
 end

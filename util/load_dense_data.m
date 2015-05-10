@@ -1,4 +1,4 @@
-function [y, X] = dnn_load_data(filename)
+function [y, X] = load_dense_data(filename)
     
     fprintf('Load %s\n', filename);
     X = dlmread(filename);

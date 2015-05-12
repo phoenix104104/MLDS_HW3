@@ -1,18 +1,18 @@
 addpath('util');
 data_dir = '../data';
-% 
-% feature_name = 'mnist-train.dense.raw';
-% filename = fullfile(data_dir, feature_name);
-% [y_train, X_train] = load_dense_data(filename);
-% 
-% feature_name = 'mnist-test.dense.raw';
-% filename = fullfile(data_dir, feature_name);
-% [y_valid, X_valid] = load_dense_data(filename);
-% 
-% 
-% fprintf('Data normalization...\n');
-% [X_train, mu, sigma] = normalize_data(X_train);
-% [X_valid, mu, sigma] = normalize_data(X_valid, mu, sigma);
+
+feature_name = 'mnist-train.dense.raw';
+filename = fullfile(data_dir, feature_name);
+[y_train, X_train] = load_dense_data(filename);
+
+feature_name = 'mnist-test.dense.raw';
+filename = fullfile(data_dir, feature_name);
+[y_valid, X_valid] = load_dense_data(filename);
+
+
+fprintf('Data normalization...\n');
+[X_train, mu, sigma] = normalize_data(X_train);
+[X_valid, mu, sigma] = normalize_data(X_valid, mu, sigma);
 
 num_class   = length(unique(y_train));
 num_data    = size(y_train, 1);

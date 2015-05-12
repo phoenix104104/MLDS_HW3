@@ -2,7 +2,6 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
     
     fprintf('DNN training...\n');
 
-    % forward
     N               = size(X_train, 1);
     batch_size      = model.opts.batch_size;
     n_layer         = length(model.W);
@@ -52,11 +51,11 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
             ed = min(b * batch_size, N);
             index = index_list(st:ed);
 
-            x_batch = X_train(index, :)';
-            y_batch = Y_train(index, :)';
+            x_batch = X_train(index, :);
+            y_batch = Y_train(index, :);
             
             % forward
-            a = x_batch;
+            a = x_batch';
             for i = 1:n_layer-1
                 model.z{i} = bsxfun(@plus, model.W{i} * a, model.B{i});
                 model.m{i} = rand(size(model.z{i})) > (1 - dropout_prob);
@@ -69,7 +68,7 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
             y_pred = softmax(model.z{n_layer});
 
             % back propagation
-            model.delta{n_layer} = grad_entropy_softmax(y_batch, y_pred);
+            model.delta{n_layer} = grad_entropy_softmax(y_batch', y_pred);
 
             for i = n_layer-1:-1:1
                 dadz = grad_activation(model.z{i});
@@ -109,7 +108,7 @@ function model = sgd(model, X)
     mu          = model.opts.momentum;
     lambda      = 1 - model.opts.weight_decay * eta;
     
-    dCdW = model.delta{1} * X';
+    dCdW = model.delta{1} * X;
     dCdB = sum( model.delta{1}, 2);
     
     model.mW{1} = mu * model.mW{1} - eta / batch_size * dCdW;
@@ -133,7 +132,6 @@ end
 
 function model = adagrad(model, X)
     
-    % mini-batch gradient descent
     % X in R^(data_size x feature_dim)
     
     n_layer     = length(model.W);
@@ -142,7 +140,7 @@ function model = adagrad(model, X)
     lambda      = 1 - model.opts.weight_decay * eta;
     eps         = 1e-6; % TODO: need tuning
     
-    dCdW = model.delta{1} * X';
+    dCdW = model.delta{1} * X;
     dCdB = sum( model.delta{1}, 2);
     
     model.sW{1} = model.sW{1} + dCdW.^2;
@@ -173,7 +171,6 @@ end
 
 function model = RMSProp(model, X)
     
-    % mini-batch gradient descent
     % X in R^(data_size x feature_dim)
     
     n_layer     = length(model.W);
@@ -183,7 +180,7 @@ function model = RMSProp(model, X)
     lambda      = 1 - model.opts.weight_decay * eta;
     eps         = 1e-6; % TODO: need tuning
     
-    dCdW = model.delta{1} * X';
+    dCdW = model.delta{1} * X;
     dCdB = sum( model.delta{1}, 2);
     
     model.sW{1} = sqrt( alpha * model.sW{1}.^2 + (1 - alpha) * dCdW.^2 );

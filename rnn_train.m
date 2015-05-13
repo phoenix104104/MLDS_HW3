@@ -26,14 +26,16 @@ function model = rnn_train(model, X_train, y_train, X_valid, y_valid)
     end
     
     fprintf('==============================================\n');
-    fprintf('Structure \t\t= %s\n', num2str(model.opts.structure));
-    fprintf('Learning Rate \t= %s\n', num2str(model.opts.learning_rate));
-    fprintf('Momentum \t\t= %s\n', num2str(model.opts.momentum));
-    fprintf('Weight decay \t= %s\n', num2str(model.opts.weight_decay));
-    fprintf('Dropout \t\t= %s\n', num2str(dropout_prob));
-    fprintf('Activation \t\t= %s\n', model.opts.activation);
-    fprintf('Update method \t= %s\n', model.opts.update_grad);
-    fprintf('Total epoch \t= %d\n', epoch);
+    fprintf('%-20s = %s\n', 'Structure', num2str(model.opts.structure));
+    fprintf('%-20s = %s\n', 'Learning Rate', num2str(model.opts.learning_rate));
+    fprintf('%-20s = %s\n', 'Momentum', num2str(model.opts.momentum));
+    fprintf('%-20s = %s\n', 'Weight decay', num2str(model.opts.weight_decay));
+    fprintf('%-20s = %s\n', 'BPTT depth', num2str(model.opts.bptt_depth));
+    fprintf('%-20s = %s\n', 'Gradient threshold', num2str(model.opts.gradient_thr));
+    fprintf('%-20s = %s\n', 'Dropout', num2str(dropout_prob));
+    fprintf('%-20s = %s\n', 'Activation', model.opts.activation);
+    fprintf('%-20s = %s\n', 'Update method', model.opts.update_grad);
+    fprintf('%-20s = %d\n', 'Total epoch', epoch);
     fprintf('==============================================\n');
     
     n_seq = length(X_train); % number of sequences
@@ -42,8 +44,10 @@ function model = rnn_train(model, X_train, y_train, X_valid, y_valid)
     xm = cell(depth, 1);
     
     for iter = 1:epoch
+        
         index_list = randperm(n_seq); % shuffle
-    
+        epoch_time = tic;
+        
         for i = 1:n_seq
             X = X_train{index_list(i)};
             y = y_train{index_list(i)};
@@ -177,8 +181,9 @@ function model = rnn_train(model, X_train, y_train, X_valid, y_valid)
             
         end % end of sequence
         
+        epoch_time = toc(epoch_time);
+        
         % calculate E_in
-        fprintf('RNN predict...\n');
         [y_label, Y_pred] = rnn_predict(model, X_train);
         cost = 0;
         acc = 0;
@@ -198,10 +203,10 @@ function model = rnn_train(model, X_train, y_train, X_valid, y_valid)
             acc = acc + mean( y_valid{i} == y_label{i} );
         end
         
-        E_val = 1 - acc / n_seq;
+        E_val = 1 - acc / length(X_valid);
         
-        fprintf('DNN training: epoch %d, cost = %f,  E_in = %f, E_val = %f\n', ...
-                iter, cost, E_in, E_val);
+        fprintf('DNN training: epoch %d (%.1f s), cost = %f,  E_in = %f, E_val = %f\n', ...
+                iter, epoch_time, cost, E_in, E_val);
 
     end % end of epoch
 

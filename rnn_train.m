@@ -16,16 +16,18 @@ function model = rnn_train(model, X_train, Y_train)
     end
     
     if( strcmpi(model.opts.update_grad, 'sgd' ) )
-        update_grad = @sgd;
+        update_gradient = @sgd;
     elseif( strcmpi(model.opts.update_grad, 'adagrad') )
-        update_grad = @adagrad;
+        update_gradient = @adagrad;
     elseif( strcmpi(model.opts.update_grad, 'rmsprop') )
-        update_grad = @RMSProp;
+        update_gradient = @RMSProp;
     else
         error('Unknown gradient update method %s\n', model.opts.update_grad);
     end
     
     fprintf('==============================================\n');
+    fprintf('%-20s = %s\n', 'Training data size', num2str(model.opts.num_data));
+    fprintf('%-20s = %s\n', 'Data normalization', num2str(model.opts.normalize));
     fprintf('%-20s = %s\n', 'Structure', num2str(model.opts.structure));
     fprintf('%-20s = %s\n', 'Learning Rate', num2str(model.opts.learning_rate));
     fprintf('%-20s = %s\n', 'Momentum', num2str(model.opts.momentum));
@@ -45,7 +47,6 @@ function model = rnn_train(model, X_train, Y_train)
     y  = cell(max_depth, 1);
     z  = cell(max_depth, 1);
     a  = cell(max_depth, 1);
-    m  = cell(max_depth, 1);
     zo = cell(max_depth, 1);
     delta = cell(max_depth+1, 1);
     
@@ -57,8 +58,8 @@ function model = rnn_train(model, X_train, Y_train)
         for i = 1:n_seq
             X = X_train{index_list(i)};
             Y = Y_train{index_list(i)};
+            Y = expand_label(Y, model.opts.num_class);
             
-            %model = rnn_clear_memory(model);
             M_init = zeros(size(model.M));
             
             n_data = size(X, 1); % number of data in one sequence
@@ -93,8 +94,10 @@ function model = rnn_train(model, X_train, Y_train)
                 % back propagation
                 for curr_depth = 1:max_depth
                     y_pred = softmax(zo{curr_depth});
+                    %y_pred = zo{curr_depth};
                     
-                    delta{curr_depth+1} = grad_cross_entropy_loss(y{curr_depth}', y_pred);
+                    delta{curr_depth+1} = grad_entropy_softmax(y{curr_depth}', y_pred);
+                    %delta{curr_depth+1} = grad_l2_loss(y{curr_depth}', y_pred);
 
                     dadz = grad_activation(z{curr_depth});
                     delta{curr_depth} = ( model.Wo' * delta{curr_depth+1} ) .* dadz;
@@ -104,8 +107,10 @@ function model = rnn_train(model, X_train, Y_train)
                         delta{d} = ( model.Wm' * delta{d+1} ) .* dadz;
                     end
 
-                    model = update_grad(model, x, a, delta, M_init, curr_depth);
+                    model = calculate_gradient(model, x, a, delta, M_init, curr_depth);
                 end
+                
+                model = update_gradient(model);
                 
                 M_init = M_next;
             
@@ -119,25 +124,23 @@ function model = rnn_train(model, X_train, Y_train)
         Y_pred = rnn_predict(model, X_train);
         cost = 0;
         for i = 1:n_seq
-            cost = cost + cross_entropy_loss(Y_train{i}, Y_pred{i});
+            Y_tr = expand_label(Y_train{i}, model.opts.num_class);
+            cost = cost + cross_entropy_loss(Y_tr, Y_pred{i});
+            %cost = cost + l2_loss(Y_train{i}, Y_pred{i});
         end
+        cost = cost / n_seq;
+        model.cost(iter) = cost;
         
-        
-        fprintf('DNN training: epoch %d (%.1f s), cost = %f\n', ...
+        fprintf('RNN training: epoch %d (%.1f s), cost = %f\n', ...
                 iter, epoch_time, cost);
 
     end % end of epoch
 
 end
 
-function model = sgd(model, x, a, delta, M_init, depth)
+function model = calculate_gradient(model, x, a, delta, M_init, depth)
     
-    % mini-batch gradient descent
-    % X in R^(1 x feature_dim)
-    
-    eta     = model.opts.learning_rate;
-    lambda  = 1 - model.opts.weight_decay * eta;
-    thr     = model.opts.gradient_thr;
+    thr = model.opts.gradient_thr;
     
     % update Wo, Bo
     dCdW = delta{depth+1} * a{depth}';
@@ -146,41 +149,78 @@ function model = sgd(model, x, a, delta, M_init, depth)
     dCdW = clip_gradient(dCdW, thr);
     dCdB = clip_gradient(dCdB, thr);
     
-    model.Wo = lambda * model.Wo - eta * dCdW;
-    model.Bo = model.Bo - eta * dCdB;
+    model.dWo = model.dWo + dCdW;
+    model.dBo = model.dBo + dCdB;
         
     % update Wm, Bm
     for d = 2:depth
-        dCdW = delta{d} * model.a{d-1}';
+        dCdW = delta{d} * a{d-1}';
         dCdB = delta{d};
         
         dCdW = clip_gradient(dCdW, thr);
         dCdB = clip_gradient(dCdB, thr);
     
-        model.Wm = lambda * model.Wm - eta * dCdW;
-        model.Bm = model.Bm - eta * dCdB;
+        model.dWm = model.dWm + dCdW;
+        model.dBm = model.dBm + dCdB;
     end
     
-    dCdW = model.delta{1} * M_init';
-	dCdB = model.delta{1};
+    dCdW = delta{1} * M_init';
+	dCdB = delta{1};
     
     dCdW = clip_gradient(dCdW, thr);
     dCdB = clip_gradient(dCdB, thr);
     
-    model.Wm = lambda * model.Wm - eta * dCdW;
-    model.Bm = model.Bm - eta * dCdB;
+    model.dWm = model.dWm + dCdW;
+    model.dBm = model.dBm + dCdB;
         
     % update Wi, Bi
     for d = 1:depth
-        dCdW = model.delta{d} * x{d};
-        dCdB = model.delta{d};
+        dCdW = delta{d} * x{d};
+        dCdB = delta{d};
         
         dCdW = clip_gradient(dCdW, thr);
         dCdB = clip_gradient(dCdB, thr);
         
-        model.Wi = lambda * model.Wi - eta * dCdW;
-        model.Bi = model.Bi - eta * dCdB;
+        model.dWi = model.dWi + dCdW;
+        model.dBi = model.dBi + dCdB;
     end
+    
+end
+
+function model = sgd(model)
+    
+    eta     = model.opts.learning_rate;
+    mu      = model.opts.momentum;
+    lambda  = 1 - model.opts.weight_decay * eta;
+    
+    % Wo, Bo
+    model.mWo = mu * model.mWo - eta * model.dWo;
+    model.mBo = mu * model.mBo - eta * model.dBo;
+    
+    model.Wo = lambda * model.Wo + model.mWo;
+    model.Bo =          model.Bo + model.mBo;
+    
+    % Wm, Bm
+    model.mWm = mu * model.mWm - eta * model.dWm;
+    model.mBm = mu * model.mBm - eta * model.dBm;
+    
+    model.Wm = lambda * model.Wm + model.mWm;
+    model.Bm =          model.Bm + model.mBm;
+    
+    % Wi, Bi
+    model.mWi = mu * model.mWi - eta * model.dWi;
+    model.mBi = mu * model.mBi - eta * model.dBi;
+    
+    model.Wi = lambda * model.Wi + model.mWi;
+    model.Bi =          model.Bi + model.mBi;
+    
+    % clear gradient buffer
+    model.dWi = zeros(size(model.Wi));
+    model.dBi = zeros(size(model.Bi));
+    model.dWm = zeros(size(model.Wm));
+    model.dBm = zeros(size(model.Bm));
+    model.dWo = zeros(size(model.Wo));
+    model.dBo = zeros(size(model.Bo));
     
 end
 
@@ -191,84 +231,3 @@ function g = clip_gradient(g, thr)
     end
     
 end
-% 
-% function model = adagrad(model, X)
-%     
-%     % mini-batch gradient descent
-%     % X in R^(data_size x feature_dim)
-%     
-%     n_layer     = length(model.W);
-%     batch_size  = size(X, 1);
-%     eta         = model.opts.learning_rate;
-%     lambda      = 1 - model.opts.weight_decay * eta;
-%     eps         = 1e-6; % TODO: need tuning
-%     
-%     dCdW = model.delta{1} * X';
-%     dCdB = sum( model.delta{1}, 2);
-%     
-%     model.sW{1} = model.sW{1} + dCdW.^2;
-%     model.sB{1} = model.sB{1} + dCdB.^2;
-%     
-%     dCdW = dCdW ./ sqrt( model.sW{1} + eps );
-%     dCdB = dCdB ./ sqrt( model.sB{1} + eps );
-%     
-%     model.W{1} = lambda * model.W{1} - eta ./ batch_size .* dCdW;
-%     model.B{1} = model.B{1} - eta ./ batch_size .* dCdB;
-%     
-%     for i = 2:n_layer
-%         
-%         dCdW = model.delta{i} * model.a{i-1}';
-%         dCdB = sum( model.delta{i}, 2);
-%         
-%         model.sW{i} = model.sW{i} + dCdW.^2;
-%         model.sB{i} = model.sB{i} + dCdB.^2;
-%         
-%         dCdW = dCdW ./ sqrt( model.sW{i} + eps );
-%         dCdB = dCdB ./ sqrt( model.sB{i} + eps );
-% 
-%         model.W{i} = lambda * model.W{i} - eta ./ batch_size .* dCdW;
-%         model.B{i} = model.B{i} - eta ./ batch_size .* dCdB;
-%     end
-% end
-% 
-% 
-% function model = RMSProp(model, X)
-%     
-%     % mini-batch gradient descent
-%     % X in R^(data_size x feature_dim)
-%     
-%     n_layer     = length(model.W);
-%     batch_size  = size(X, 1);
-%     eta         = model.opts.learning_rate;
-%     alpha       = model.opts.rmsprop_alpha;
-%     lambda      = 1 - model.opts.weight_decay * eta;
-%     eps         = 1e-6; % TODO: need tuning
-%     
-%     dCdW = model.delta{1} * X';
-%     dCdB = sum( model.delta{1}, 2);
-%     
-%     model.sW{1} = sqrt( alpha * model.sW{1}.^2 + (1 - alpha) * dCdW.^2 );
-%     model.sB{1} = sqrt( alpha * model.sB{1}.^2 + (1 - alpha) * dCdB.^2 );
-%     
-%     dCdW = dCdW ./ sqrt( model.sW{1} + eps );
-%     dCdB = dCdB ./ sqrt( model.sB{1} + eps );
-%     
-%     model.W{1} = lambda * model.W{1} - eta ./ batch_size .* dCdW;
-%     model.B{1} = model.B{1} - eta ./ batch_size .* dCdB;
-%     
-%     for i = 2:n_layer
-%         
-%         dCdW = model.delta{i} * model.a{i-1}';
-%         dCdB = sum( model.delta{i}, 2);
-%     
-%         model.sW{i} = sqrt( alpha * model.sW{i}.^2 + (1 - alpha) * dCdW.^2 );
-%         model.sB{i} = sqrt( alpha * model.sB{i}.^2 + (1 - alpha) * dCdB.^2 );
-%     
-%         dCdW = dCdW ./ sqrt( model.sW{i} + eps );
-%         dCdB = dCdB ./ sqrt( model.sB{i} + eps );
-% 
-%         model.W{i} = lambda * model.W{i} - eta ./ batch_size .* dCdW;
-%         model.B{i} = model.B{i} - eta ./ batch_size .* dCdB;
-% 
-%     end
-% end

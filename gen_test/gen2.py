@@ -13,9 +13,11 @@ min_test_len = 15
 max_test_len = 20
 output_path = './'
 
+depend = 1
+
 p = 0.75 #regular_behavior_prob
 
-choice_num = 2
+choice_num = 3
 
 argc = len(sys.argv)
 
@@ -76,6 +78,10 @@ def print_state(f, state):
 if(output_path[-1] != '/'):
     output_path += '/'
 
+print 'mkdir ' + output_path
+os.system('mkdir ' + output_path)
+
+print 'mkdir ' + output_path + "train"
 os.system('mkdir ' + output_path + "train")
 
 filename = 'train'
@@ -91,7 +97,10 @@ for i in range(0, train_num):
         if(random() > p):
             next_state = randint(0, state_num-1)
         else:
-            next_state = (state1+state2+1) % state_num
+            if(depend == 1):
+                next_state = (state2+1) % state_num
+            else:
+                next_state = (state1+state2+1) % state_num
         state1 = state2
         state2 = next_state
     print_state(f, -1)
@@ -100,6 +109,7 @@ f.close()
 answers = []
 
 dirname = 'test'
+print 'mkdir ' + output_path + dirname
 os.system('mkdir ' + output_path + dirname)
 
 for i in range(0, test_num):
@@ -125,7 +135,10 @@ for i in range(0, test_num):
             if(random() > p2):
                 next_state = randint(0, state_num-1)
             else:
-                next_state = (state1+state2+1) % state_num
+                if(depend == 1):
+                    next_state = (state2+1) % state_num
+                else:
+                    next_state = (state1+state2+1) % state_num
             state1 = state2
             state2 = next_state
         print_state(f, -1)

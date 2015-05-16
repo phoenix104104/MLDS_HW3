@@ -4,6 +4,7 @@ from random import randint, random
 idx = 1
 
 state_num = 4
+feature_dim = 4
 train_num = 25
 min_train_len = 20
 max_train_len = 50
@@ -50,26 +51,38 @@ while idx < argc:
         print "unknown argument: " + sys.argc[idx] + '\n'
         exit() 
 
+feature_vec = []
+
+for i in range(0, state_num):
+    fea = []
+    for j in range(0, feature_dim):
+        fea.append(random())
+    feature_vec.append(fea)
+
+
 def print_state(f, state):
-    for i in range(0, state_num):
-        if(i != 0):
-            f.write(' ')
-        if(i==state):
-            f.write('1')
-        else:
-            f.write('0')
-    f.write('\n')
+    if(state == -1):
+        f.write("0")
+        for i in range(0, feature_dim):
+            f.write(" 0")
+        f.write("\n")
+    else:
+        f.write(str(state+1))
+        for i in range(0, feature_dim):
+            f.write(" ")
+            f.write(str(feature_vec[state][i]))
+        f.write('\n')
 
 if(output_path[-1] != '/'):
     output_path += '/'
 
 os.system('mkdir ' + output_path + "train")
 
+filename = 'train'
+filepath = output_path + 'train/' + filename
+f = open(filepath, 'w')
 for i in range(0, train_num):
     tlen = randint(min_train_len, max_train_len)
-    filename = 'train%03d' %i
-    filepath = output_path + 'train/' + filename
-    f = open(filepath, 'w')
     state1 = randint(0, state_num-1)
     state2 = randint(0, state_num-1)
     print_state(f, state1)
@@ -81,23 +94,25 @@ for i in range(0, train_num):
             next_state = (state1+state2+1) % state_num
         state1 = state2
         state2 = next_state
-    f.close()
+    print_state(f, -1)
+f.close()
 
 answers = []
 
+dirname = 'test'
+os.system('mkdir ' + output_path + dirname)
+
 for i in range(0, test_num):
     tlen = randint(min_test_len, max_test_len)
-    dirname = 'test%03d' %i
-    os.system('mkdir ' + output_path + dirname)
     
     ans = randint(0, choice_num-1)
     answers.append(ans)
     
+    filename = '_%02d' %i
+    filename = dirname + filename
+    filepath = output_path + dirname + '/' + filename
+    f = open(filepath, 'w')
     for j in range(0, choice_num):
-        filename = '_%02d' %j
-        filename = dirname + filename
-        filepath = output_path + dirname + '/' + filename
-        f = open(filepath, 'w')
         state1 = randint(0, state_num-1)
         state2 = randint(0, state_num-1)
         if(j == ans):
@@ -113,7 +128,8 @@ for i in range(0, test_num):
                 next_state = (state1+state2+1) % state_num
             state1 = state2
             state2 = next_state
-        f.close()
+        print_state(f, -1)
+    f.close()
 
 f = open(output_path + 'testing_ans', 'w')
 for i in range(0, len(answers)):

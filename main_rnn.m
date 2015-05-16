@@ -1,6 +1,6 @@
 addpath('util');
 
-input_dir = '../test1-c3';
+input_dir = '../test2-c2';
 train_filename = fullfile(input_dir, 'train', 'train');
 feature_name = '';
 

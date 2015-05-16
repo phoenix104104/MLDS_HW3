@@ -1,4 +1,4 @@
-function model = rnn_train(model, X_train, y_train, X_valid, y_valid)
+function model = rnn_train(model, X_train, Y_train)
     
     fprintf('RNN training...\n');
 
@@ -39,9 +39,15 @@ function model = rnn_train(model, X_train, y_train, X_valid, y_valid)
     fprintf('==============================================\n');
     
     n_seq = length(X_train); % number of sequences
-    depth = model.opts.bptt_depth;
+    max_depth = model.opts.bptt_depth;
     
-    xm = cell(depth, 1);
+    x  = cell(max_depth, 1);
+    y  = cell(max_depth, 1);
+    z  = cell(max_depth, 1);
+    a  = cell(max_depth, 1);
+    m  = cell(max_depth, 1);
+    zo = cell(max_depth, 1);
+    delta = cell(max_depth+1, 1);
     
     for iter = 1:epoch
         
@@ -50,133 +56,59 @@ function model = rnn_train(model, X_train, y_train, X_valid, y_valid)
         
         for i = 1:n_seq
             X = X_train{index_list(i)};
-            y = y_train{index_list(i)};
-            Y = expand_label(y, model.opts.num_class);
+            Y = Y_train{index_list(i)};
             
-            model = rnn_clear_memory(model);
+            %model = rnn_clear_memory(model);
+            M_init = zeros(size(model.M));
             
             n_data = size(X, 1); % number of data in one sequence
             
-            ptr = [1, 2, 3];
             
-            % --- process first data
-            x = X(1, :);
-            y_gt = Y(1, :);
-            
-            % forward
-            z = (model.Wi * x' + model.Bi) + ...
-                (model.Wm * model.M + model.Bm);
-
-            a = activation(z);
-            a = a * (1 - model.opts.dropout_prob);
-
-            % save for back-propagation
-            model.S{1} = model.M;
-            model.z{1} = z;
-            model.a{1} = a;
-            xm{1} = x;
-            
-            % store in memory layer
-            model.M = a;
+            for j = max_depth:n_data
                 
-            % last layer
-            z = model.Wo * a + model.Bo;
-            y_pred = softmax(z);
-                
-                
-            % back propagation
-            model.delta{2} = grad_entropy_softmax(y_gt', y_pred);
-            
-            dadz = grad_activation(model.z{1});
-            model.delta{1} = ( model.Wo' * model.delta{2} ) .* dadz;
-            
-            model = update_grad(model, xm, 1, ptr);
-            % -------------------------------------------------------------
-            
-            
-            % --- process second data
-            x = X(2, :);
-            y_gt = Y(2, :);
-            
-            % forward
-            z = (model.Wi * x' + model.Bi) + ...
-                (model.Wm * model.M + model.Bm);
-
-            a = activation(z);
-            a = a * (1 - model.opts.dropout_prob);
-            
-            % save for back-propagation
-            model.S{2} = model.M;
-            model.z{2} = z;
-            model.a{2} = a;
-            xm{2} = x;
-            
-            % store in memory layer
-            model.M = a;
-            
-            % last layer
-            z = model.Wo * a + model.Bo;
-            y_pred = softmax(z);
-                
-                
-            % back propagation
-            model.delta{3} = grad_entropy_softmax(y_gt', y_pred);
-            
-            dadz = grad_activation(model.z{2});
-            model.delta{2} = ( model.Wo' * model.delta{3} ) .* dadz;
-            
-            dadz = grad_activation(model.z{1});
-            model.delta{1} = ( model.Wm' * model.delta{2} ) .* dadz;
-            
-            model = update_grad(model, xm, 2, ptr);
-            
-            % -------------------------------------------------------------
-            
-            
-            
-            ptr = [2, 3, 1];
-            for j = 3:n_data
-                ptr = mod(ptr+1, 3)+1; % when j=3, ptr = [1, 2, 3]
-                
-                x = X(j, :);
-                y_gt = Y(j, :);
-                
-                % forward
-                z = (model.Wi * x' + model.Bi) + ...
-                    (model.Wm * model.M + model.Bm);
-
-                a = activation(z);
-                a = a * (1 - model.opts.dropout_prob);
-                
-                % save for back-propagation
-                model.S{ptr(depth)} = model.M;
-                model.z{ptr(depth)} = z;
-                model.a{ptr(depth)} = a;
-                xm{ptr(depth)} = x;
-                
-                % store in memory layer
-                model.M = a;
-                
-                
-                % last layer
-                z = model.Wo * a + model.Bo;
-                y_pred = softmax(z);
-                
-                
-                % back propagation
-                model.delta{depth+1} = grad_entropy_softmax(y_gt', y_pred);
-                
-                dadz = grad_activation(model.z{ptr(depth)});
-                model.delta{depth} = ( model.Wo' * model.delta{depth+1} ) .* dadz;
-                    
-                for d = depth-1:-1:1
-                    dadz = grad_activation(model.z{ptr(d)});
-                    model.delta{d} = ( model.Wm' * model.delta{d+1} ) .* dadz;
+                % fetch data
+                for k = 1:max_depth
+                    ptr = j - max_depth + k; % pointer to access X, Y
+                    x{k} = X(ptr, :);
+                    y{k} = Y(ptr, :);
                 end
                 
-                model = update_grad(model, xm, depth, ptr);
+                model.M = M_init;
                 
-                       
+                % forward
+                for curr_depth = 1:max_depth
+                    z{curr_depth} = (model.Wi * x{curr_depth}' + model.Bi) + ...
+                                    (model.Wm * model.M + model.Bm);
+
+                    a{curr_depth}  = activation(z{curr_depth}) * (1 - model.opts.dropout_prob);
+                    zo{curr_depth} = model.Wo * a{curr_depth} + model.Bo;
+                    
+                    model.M = a{curr_depth};
+                    
+                    if( curr_depth == 1 )
+                        M_next = model.M;
+                    end
+                end
+                
+                % back propagation
+                for curr_depth = 1:max_depth
+                    y_pred = softmax(zo{curr_depth});
+                    
+                    delta{curr_depth+1} = grad_cross_entropy_loss(y{curr_depth}', y_pred);
+
+                    dadz = grad_activation(z{curr_depth});
+                    delta{curr_depth} = ( model.Wo' * delta{curr_depth+1} ) .* dadz;
+
+                    for d = curr_depth-1:-1:1
+                        dadz = grad_activation(z{d});
+                        delta{d} = ( model.Wm' * delta{d+1} ) .* dadz;
+                    end
+
+                    model = update_grad(model, x, a, delta, M_init, curr_depth);
+                end
+                
+                M_init = M_next;
+            
             end % end of data in sequence
             
         end % end of sequence
@@ -184,35 +116,21 @@ function model = rnn_train(model, X_train, y_train, X_valid, y_valid)
         epoch_time = toc(epoch_time);
         
         % calculate E_in
-        [y_label, Y_pred] = rnn_predict(model, X_train);
+        Y_pred = rnn_predict(model, X_train);
         cost = 0;
-        acc = 0;
         for i = 1:n_seq
-            Y_gt = expand_label(y_train{i}, model.opts.num_class);
-            cost = cost + cross_entropy_loss(Y_gt, Y_pred{i});
-            acc = acc + mean( y_train{i} == y_label{i} );
+            cost = cost + cross_entropy_loss(Y_train{i}, Y_pred{i});
         end
         
-        E_in = 1 - acc / n_seq;
         
-        % calculate E_val
-        % calculate E_in
-        [y_label, Y_pred] = rnn_predict(model, X_valid);
-        acc = 0;
-        for i = 1:length(X_valid)
-            acc = acc + mean( y_valid{i} == y_label{i} );
-        end
-        
-        E_val = 1 - acc / length(X_valid);
-        
-        fprintf('DNN training: epoch %d (%.1f s), cost = %f,  E_in = %f, E_val = %f\n', ...
-                iter, epoch_time, cost, E_in, E_val);
+        fprintf('DNN training: epoch %d (%.1f s), cost = %f\n', ...
+                iter, epoch_time, cost);
 
     end % end of epoch
 
 end
 
-function model = sgd(model, xm, depth, ptr)
+function model = sgd(model, x, a, delta, M_init, depth)
     
     % mini-batch gradient descent
     % X in R^(1 x feature_dim)
@@ -222,8 +140,8 @@ function model = sgd(model, xm, depth, ptr)
     thr     = model.opts.gradient_thr;
     
     % update Wo, Bo
-    dCdW = model.delta{depth+1} * model.a{depth}';
-	dCdB = model.delta{depth+1};
+    dCdW = delta{depth+1} * a{depth}';
+	dCdB = delta{depth+1};
         
     dCdW = clip_gradient(dCdW, thr);
     dCdB = clip_gradient(dCdB, thr);
@@ -233,8 +151,8 @@ function model = sgd(model, xm, depth, ptr)
         
     % update Wm, Bm
     for d = 2:depth
-        dCdW = model.delta{ptr(d)} * model.a{ptr(d-1)}';
-        dCdB = model.delta{ptr(d)};
+        dCdW = delta{d} * model.a{d-1}';
+        dCdB = delta{d};
         
         dCdW = clip_gradient(dCdW, thr);
         dCdB = clip_gradient(dCdB, thr);
@@ -243,8 +161,8 @@ function model = sgd(model, xm, depth, ptr)
         model.Bm = model.Bm - eta * dCdB;
     end
     
-    dCdW = model.delta{ptr(1)} * model.S{ptr(1)}';
-	dCdB = model.delta{ptr(1)};
+    dCdW = model.delta{1} * M_init';
+	dCdB = model.delta{1};
     
     dCdW = clip_gradient(dCdW, thr);
     dCdB = clip_gradient(dCdB, thr);
@@ -254,8 +172,8 @@ function model = sgd(model, xm, depth, ptr)
         
     % update Wi, Bi
     for d = 1:depth
-        dCdW = model.delta{ptr(d)} * xm{ptr(d)};
-        dCdB = model.delta{ptr(d)};
+        dCdW = model.delta{d} * x{d};
+        dCdB = model.delta{d};
         
         dCdW = clip_gradient(dCdW, thr);
         dCdB = clip_gradient(dCdB, thr);
@@ -271,6 +189,7 @@ function g = clip_gradient(g, thr)
     if( norm(g(:)) > thr )
         g = g / norm(g(:)) * thr;
     end
+    
 end
 % 
 % function model = adagrad(model, X)

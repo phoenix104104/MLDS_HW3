@@ -1,44 +1,45 @@
 addpath('util');
 
-data_dir = '../hw2_feature';
-feature_name = 'fbank';
+train_data_dir = '../toy/train';
+feature_name = '';
 
-train_filename = fullfile(data_dir, sprintf('train400p.%s', feature_name));
-valid_filename = fullfile(data_dir, sprintf('valid400p.%s', feature_name));
-train_list_name = '../hw2_feature/list/train400p.count';
-valid_list_name = '../hw2_feature/list/valid400p.count';
-
-% tic
-% %[y_train, X_train] = load_hw2_data(data_dir, train_list, feature_name);
-% %[y_valid, X_valid] = load_hw2_data(data_dir, valid_list, feature_name);
+tic
+[Y_train, X_train] = rnn_load_data(train_data_dir, feature_name);
 %[y_train, X_train, y_valid, X_valid] ...
-%    = load_hw2_data(train_filename, valid_filename, train_list_name, valid_list_name);
-% toc
+%   = load_hw2_data(train_filename, valid_filename, train_list_name, valid_list_name);
+toc
 
-num_class = 48;
-num_data = length(y_train);
+num_data = length(Y_train);
 num_dim = size(X_train{1}, 2);
 fprintf('Input data size = %d\n', num_data);
 fprintf('Feature dimension = %d\n', num_dim);
 
-opts.num_class      = num_class;
 opts.learning_rate  = 0.01;
-opts.epoch          = 100;
+opts.epoch          = 50;
 opts.weight_decay   = 0;
 opts.momentum       = 0.9;
 opts.rmsprop_alpha  = 0.9;
 opts.dropout_prob   = 0.0;
 opts.bptt_depth     = 3;
-opts.gradient_thr   = 1; %%
-opts.hidden         = [256];
-opts.structure      = [num_dim, opts.hidden, num_class];
+opts.gradient_thr   = 0.5; %%
+opts.hidden         = [4];
+opts.structure      = [num_dim, opts.hidden, num_dim];
 opts.activation     = 'sigmoid';
 opts.update_grad    = 'sgd';
 
-sample_train = randi(length(X_train), 100, 1);
-sample_valid = randi(length(X_valid), 100, 1);
 
 model = rnn_init(opts);
-model = rnn_train(model, X_train(sample_train), y_train(sample_train), X_valid(sample_valid), y_valid(sample_valid));
+model = rnn_train(model, X_train, Y_train);
 
+result = zeros(10, 1);
+Y_pred = cell(10, 1);
+for t = 1:10
+    test_data_dir = sprintf('../toy/test%03d', t-1);
+    [Y_test, X_test] = rnn_load_data(test_data_dir, feature_name);
+    [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
+    result(t) = res-1;
+    Y_pred{t} = y_pred;
+end
 
+answer = dlmread('../toy/testing_ans');
+[answer, result]

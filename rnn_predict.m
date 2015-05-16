@@ -1,4 +1,4 @@
-function [Y_label, Y_pred] = rnn_predict(model, X)
+function Y_pred = rnn_predict(model, X)
     
     if( strcmpi(model.opts.activation, 'sigmoid' ) )
         activation      = @sigmoid;
@@ -9,7 +9,6 @@ function [Y_label, Y_pred] = rnn_predict(model, X)
     end
     
     n_seq   = length(X);
-    Y_label = cell(n_seq, 1);
     Y_pred  = cell(n_seq, 1);
     
     
@@ -17,7 +16,7 @@ function [Y_label, Y_pred] = rnn_predict(model, X)
         
         x = X{i};
         n_data = size(X{i}, 1);
-        y_pred  = zeros(n_data, model.opts.num_class);
+        y_pred  = zeros(n_data, model.opts.structure(end));
         
         model.M = zeros(size(model.M)); % clear memory layer
 
@@ -38,10 +37,7 @@ function [Y_label, Y_pred] = rnn_predict(model, X)
             y_pred(j, :) = y';
         end
         
-        [~, y_label] = max(y_pred, [], 2);
-        
         Y_pred{i} = y_pred;
-        Y_label{i} = y_label;
     end
     
 end

@@ -1,16 +1,18 @@
 addpath('util');
 
-input_dir = '../test2-c2';
-train_filename = fullfile(input_dir, 'train', 'train');
-feature_name = '';
-
+input_dir = '../feature_15_100/Vec';
+train_filename = fullfile(input_dir, 'train', 'train_001.mat');
 normalize = 0;
 
+
+
 tic
-[Y_train, X_train, mu, sigma] = rnn_load_data(train_filename, normalize);
+%[Y_train, X_train, mu, sigma] = rnn_load_data(train_filename, normalize);
+[Y_train, X_train, mu, sigma] = rnn_load_binary_data(train_filename, normalize);
 toc
 
-num_class = 4;
+
+num_class = 24803;
 num_data = length(Y_train);
 num_dim = size(X_train{1}, 2);
 fprintf('Input data size = %d\n', num_data);
@@ -28,7 +30,7 @@ opts.momentum       = 0.9;
 opts.dropout_prob   = 0.0;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
-opts.hidden         = [10];
+opts.hidden         = [1000];
 opts.structure      = [num_dim, opts.hidden, num_class];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd';
@@ -37,19 +39,37 @@ opts.update_grad    = 'sgd';
 model = rnn_init(opts);
 model = rnn_train(model, X_train, Y_train);
 
-N = 100;
-result = zeros(N, 1);
-Y_pred = cell(N, 1);
-for t = 1:N
-    test_filename = fullfile(input_dir, 'test', sprintf('test_%02d', t-1));
-    [Y_test, X_test, mu, sigma] = rnn_load_data(test_filename, normalize, mu, sigma);
-    [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
-    result(t) = res-1;
-    Y_pred{t} = y_pred;
+%{
+test_dir = fullfile(input_dir, 'test');
+fprintf('Load test data from %s\n', test_dir);
+L = dir(test_dir);
+test_list = {};
+for i = 1:length(L)
+    if(L(i).name(1) == '.')
+        continue;
+    end
+    test_list{end+1} = L(i).name;
 end
 
-answer = dlmread(fullfile(input_dir, 'testing_ans'));
-acc = mean(answer == result)
+N = length(test_list);
+result = zeros(N, 1);
+Y_pred = cell(N, 1);
+%m = zeros(N, 1);
+for t = 1:N
+    test_filename = fullfile(test_dir, test_list{t});
+    [Y_test, X_test, mu, sigma] = rnn_load_data(test_filename, normalize, mu, sigma, 1);
+%     for j = 1:length(Y_test)
+%         m(end+1) = max(Y_test{j});
+%     end
+    %[res, y_pred, cost] = rnn_test(model, X_test, Y_test);
+    %result(t) = res-1;
+    %Y_pred{t} = y_pred;
+end
+max(m)
+%}
+% 
+% answer = dlmread(fullfile(input_dir, 'testing_ans'));
+% acc = mean(answer == result)
 
 
 %model_filename = '../model/test.rnn';

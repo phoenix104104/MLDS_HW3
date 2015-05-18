@@ -1,18 +1,12 @@
-function [y, X, mu, sigma] = rnn_load_data(filename, is_normalize, mu, sigma, mute)
+function [y, X, mu, sigma] = rnn_load_binary_data(filename, is_normalize, mu, sigma)
     
-    if( ~exist('mute', 'var') )
-        mute = 0;
-    end
+    fprintf('Load %s\n', filename);
     
-    if( ~mute )
-        fprintf('Load %s\n', filename);
-    end
-
-    D = dlmread(filename);
+    load(filename);
     yi = D(:, 1);
     Xi = D(:, 2:end);
     clear D;
-
+    
     
     if( is_normalize )
         if( nargin < 4 )
@@ -32,6 +26,7 @@ function [y, X, mu, sigma] = rnn_load_data(filename, is_normalize, mu, sigma, mu
     y = cell(N, 1);
     X = cell(N, 1);
     
+    
     st = 1;
     for i = 1:N
         ed = split_index(i) - 1;
@@ -40,16 +35,5 @@ function [y, X, mu, sigma] = rnn_load_data(filename, is_normalize, mu, sigma, mu
         st = split_index(i) + 1;
     end
     
+    
 end
-% 
-% function data_list = list_dir(dir_name)
-% 
-%     list = dir(dir_name);
-%     data_list = {};
-%     for i = 1:length(list)
-%         if( list(i).name(1) ~= '.' )
-%             data_list{end+1} = list(i).name;
-%         end
-%     end
-%         
-% end

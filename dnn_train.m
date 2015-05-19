@@ -57,9 +57,9 @@ function model = dnn_train(model, X_train, y_train, X_valid, y_valid)
             % forward
             a = x_batch';
             for i = 1:n_layer-1
+                a = dropout(a, dropout_prob);
                 model.z{i} = bsxfun(@plus, model.W{i} * a, model.B{i});
-                model.m{i} = rand(size(model.z{i})) > (1 - dropout_prob);
-                a = activation(model.z{i} .* model.m{i});
+                a = activation(model.z{i});
                 model.a{i} = a;
             end
 

@@ -16,7 +16,7 @@ function Y_pred = rnn_predict(model, X)
         
         x = X{i};
         n_data = size(X{i}, 1);
-        y_pred  = zeros(n_data, model.opts.structure(end));
+        y_pred = zeros(n_data, model.opts.structure(end));
         
         model.M = zeros(size(model.M)); % clear memory layer
 
@@ -27,8 +27,7 @@ function Y_pred = rnn_predict(model, X)
                 (model.Wm * model.M +  model.Bm);
 
             a = activation(z);
-            a = a * (1 - model.opts.dropout_prob);
-
+            
             model.M = a; % store in memory layer
 
             % last layer

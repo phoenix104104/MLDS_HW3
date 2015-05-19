@@ -15,9 +15,9 @@ output_path = './'
 
 depend = 1
 
-p = 0.75 #regular_behavior_prob
+p = 1 #regular_behavior_prob
 
-choice_num = 3
+choice_num = 2
 
 argc = len(sys.argv)
 

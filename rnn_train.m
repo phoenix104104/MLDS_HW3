@@ -34,7 +34,6 @@ function model = rnn_train(model, X_train, Y_train)
     fprintf('%-20s = %s\n', 'Weight decay', num2str(model.opts.weight_decay));
     fprintf('%-20s = %s\n', 'BPTT depth', num2str(model.opts.bptt_depth));
     fprintf('%-20s = %s\n', 'Gradient threshold', num2str(model.opts.gradient_thr));
-    fprintf('%-20s = %s\n', 'Dropout', num2str(dropout_prob));
     fprintf('%-20s = %s\n', 'Activation', model.opts.activation);
     fprintf('%-20s = %s\n', 'Update method', model.opts.update_grad);
     fprintf('%-20s = %d\n', 'Total epoch', epoch);
@@ -80,8 +79,9 @@ function model = rnn_train(model, X_train, Y_train)
                 for curr_depth = 1:max_depth
                     z{curr_depth} = (model.Wi * x{curr_depth}' + model.Bi) + ...
                                     (model.Wm * model.M + model.Bm);
-
-                    a{curr_depth}  = activation(z{curr_depth}) * (1 - model.opts.dropout_prob);
+                                
+                    a{curr_depth} = activation(z{curr_depth});
+                    
                     zo{curr_depth} = model.Wo * a{curr_depth} + model.Bo;
                     
                     model.M = a{curr_depth};
@@ -94,6 +94,7 @@ function model = rnn_train(model, X_train, Y_train)
                 % back propagation
                 for curr_depth = 1:max_depth
                     y_pred = softmax(zo{curr_depth});
+
                     %y_pred = zo{curr_depth};
                     
                     delta{curr_depth+1} = grad_entropy_softmax(y{curr_depth}', y_pred);
@@ -137,6 +138,8 @@ function model = rnn_train(model, X_train, Y_train)
     end % end of epoch
 
 end
+
+
 
 function model = calculate_gradient(model, x, a, delta, M_init, depth)
     

@@ -12,9 +12,9 @@ function y_pred = dnn_predict(model, X)
 
     a = X';
     for i = 1:n_layer-1
+        a = a * (1 - model.opts.dropout_prob);
         z = bsxfun(@plus, model.W{i} * a, model.B{i});
         a = activation(z);
-        a = a * (1 - model.opts.dropout_prob);
     end
 
     % last layer

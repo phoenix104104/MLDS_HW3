@@ -1,13 +1,13 @@
 addpath('util');
 
-input_dir = '../data/easy2-c2';
-train_name = 'train';
+input_dir = '../feature_1_100/Vec';
+train_name = 'train_076';
 normalize = 1;
 
 
 tic
-%train_filename = fullfile(input_dir, 'train', sprintf('%s', train_name));
-%[Y_train, X_train, mu, sigma] = rnn_load_data(train_filename, normalize);
+% train_filename = fullfile(input_dir, 'train', sprintf('%s', train_name));
+% [Y_train, X_train, mu, sigma] = rnn_load_data(train_filename, normalize);
 
 train_filename = fullfile(input_dir, 'train', sprintf('%s.mat', train_name));
 [Y_train, X_train, mu, sigma] = rnn_load_binary_data(train_filename, normalize);
@@ -31,14 +31,14 @@ opts.num_data       = num_data;
 opts.num_dim        = num_dim;
 opts.normalize      = normalize;
 opts.learning_rate  = 0.01;
-opts.epoch          = 1000;
-opts.epoch_to_save  = 50;
+opts.epoch          = 100;
+opts.epoch_to_save  = 0;
 opts.weight_decay   = 0;
-opts.momentum       = 0.0;
+opts.momentum       = 0.9;
 %opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
-opts.hidden         = 100;
+opts.hidden         = 20;
 opts.structure      = [num_dim, opts.hidden, num_class];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd';
@@ -86,5 +86,5 @@ end
 
 filename = sprintf('../pred/%s.csv', parameter);
 save_kaggle_csv(filename, result);
-% answer = dlmread(fullfile(input_dir, 'testing_ans'));
-% acc = mean(answer == result)
+answer = dlmread(fullfile(input_dir, 'testing_ans'));
+acc = mean(answer == result)

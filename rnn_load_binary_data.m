@@ -1,4 +1,4 @@
-function [y, X] = rnn_load_binary_data(filename_list, mute)
+function [y, X] = rnn_load_binary_data(file_dir, filename_list, mute)
     
     if( ~exist('mute', 'var') )
         mute = 0;
@@ -7,7 +7,7 @@ function [y, X] = rnn_load_binary_data(filename_list, mute)
     yi = [];
     Xi = [];
     for i = 1:length(filename_list)
-        filename = filename_list{i};
+        filename = fullfile(file_dir, filename_list{i});
         if( ~mute )
             fprintf('Load %s\n', filename);
         end

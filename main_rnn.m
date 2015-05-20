@@ -4,16 +4,17 @@ addpath('util');
 %train_name_list{1} = fullfile(input_dir, 'train', 'train');
 
 input_dir = '../feature_1_100_reduce/Vec';
+train_dir = fullfile(input_dir, 'train');
 data_list = 1:2;
 train_name = 'train_1to2'; % define by yourself
 train_name_list = {};
 for i = 1:length(data_list)
-    train_name_list{i} = fullfile(input_dir, 'train', sprintf('train_%03d.mat', data_list(i)));
+    train_name_list{i} = sprintf('train_%03d.mat', data_list(i));
 end
 
 tic
-%[Y_train, X_train] = rnn_load_data(train_name_list);
-[Y_train, X_train] = rnn_load_binary_data(train_name_list);
+%[Y_train, X_train] = rnn_load_data(train_dir, train_name_list);
+[Y_train, X_train] = rnn_load_binary_data(train_dir, train_name_list);
 toc
 
 
@@ -74,8 +75,8 @@ Y_pred = cell(N, 1);
 fprintf('RNN testing...\n');
 test_filename = {};
 for t = 1:N
-    test_filename{1} = fullfile(test_dir, test_list{t});
-    [Y_test, X_test] = rnn_load_data(test_filename, 1);
+    test_filename{1} = test_list{t};
+    [Y_test, X_test] = rnn_load_data(test_dir, test_filename, 1);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
     result(t) = res-1;
     Y_pred{t} = y_pred;

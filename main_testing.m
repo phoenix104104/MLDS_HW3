@@ -45,8 +45,8 @@ Y_pred = cell(N, 1);
 fprintf('RNN testing...\n');
 test_filename = {};
 for t = 1:N
-    test_filename{1} = fullfile(test_dir, test_list{t});
-    [Y_test, X_test] = rnn_load_data(test_filename, 1);
+    test_filename{1} = test_list{t};
+    [Y_test, X_test] = rnn_load_data(test_dir, test_filename, 1);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
     result(t) = res-1;
     Y_pred{t} = y_pred;

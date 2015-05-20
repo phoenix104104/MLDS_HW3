@@ -4,17 +4,28 @@ function [y, X] = rnn_load_data(file_dir, filename_list, mute)
         mute = 0;
     end
     
-    yi = [];
-    Xi = [];
-    for i = 1:length(filename_list)
-        filename = fullfile(file_dir, filename_list{i});
+    if( iscell(filename_list) )
+        yi = [];
+        Xi = [];
+        for i = 1:length(filename_list)
+            filename = fullfile(file_dir, filename_list{i});
+            if( ~mute )
+                fprintf('Load %s\n', filename);
+            end
+
+            D = dlmread(filename);
+            yi = [yi; D(:, 1)];
+            Xi = [Xi; D(:, 2:end)];
+        end
+    else
+        filename = fullfile(file_dir, filename_list);
         if( ~mute )
             fprintf('Load %s\n', filename);
         end
-    
+
         D = dlmread(filename);
-        yi = [yi; D(:, 1)];
-        Xi = [Xi; D(:, 2:end)];
+        yi = D(:, 1);
+        Xi = D(:, 2:end);
     end
     clear D;
 

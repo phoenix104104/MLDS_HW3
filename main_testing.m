@@ -48,7 +48,7 @@ for t = 1:N
     test_filename{1} = test_list{t};
     [Y_test, X_test] = rnn_load_data(test_dir, test_filename, 1);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
-    result(t) = res-1;
+    result(t) = res;
     Y_pred{t} = y_pred;
 end
 
@@ -56,4 +56,5 @@ filename = fullfile(opts.model_dir, sprintf('epoch%d.csv', epoch));
 save_kaggle_csv(filename, result);
 
 % answer = dlmread(fullfile(input_dir, 'testing_ans'));
-% acc = mean(answer == result)
+answer = dlmread('google.ans');
+acc = mean(answer == result)

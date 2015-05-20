@@ -1,7 +1,9 @@
 addpath('util');
 
-%input_dir = '../data/test2-c3';
-%train_name_list{1} = fullfile(input_dir, 'train', 'train');
+% input_dir = '../data/test2-c2-p1';
+% train_dir = fullfile(input_dir, 'train');
+% train_name = 'test2-c2-p1';
+% train_name_list = 'train';
 
 input_dir = '../feature_1_100_reduce/Vec';
 train_dir = fullfile(input_dir, 'train');
@@ -74,16 +76,16 @@ N = length(test_list);
 result = zeros(N, 1);
 Y_pred = cell(N, 1);
 fprintf('RNN testing...\n');
-test_filename = {};
 for t = 1:N
-    test_filename{1} = test_list{t};
-    [Y_test, X_test] = rnn_load_data(test_dir, test_filename, 1);
+    [Y_test, X_test] = rnn_load_data(test_dir, test_list{t}, 1);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
-    result(t) = res-1;
+    result(t) = res;
     Y_pred{t} = y_pred;
 end
 
-filename = sprintf('../pred/%s.csv', parameter);
+filename = fullfile(opts.model_dir, sprintf('epoch%d.csv', opts.epoch));
 save_kaggle_csv(filename, result);
-% answer = dlmread(fullfile(input_dir, 'testing_ans'));
-% acc = mean(answer == result)
+
+%answer = dlmread(fullfile(input_dir, 'testing_ans'))+1;
+answer = dlmread('google.ans');
+acc = mean(answer == result)

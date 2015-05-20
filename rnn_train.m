@@ -24,7 +24,6 @@ function model = rnn_train(model, X_train, Y_train)
     
     fprintf('==============================================\n');
     fprintf('%-20s = %s\n', 'Training data size', num2str(model.opts.num_data));
-    fprintf('%-20s = %s\n', 'Data normalization', num2str(model.opts.normalize));
     fprintf('%-20s = %s\n', 'Structure', num2str(model.opts.structure));
     fprintf('%-20s = %s\n', 'Learning Rate', num2str(model.opts.learning_rate));
     fprintf('%-20s = %s\n', 'Momentum', num2str(model.opts.momentum));
@@ -118,17 +117,11 @@ function model = rnn_train(model, X_train, Y_train)
         epoch_time = toc(epoch_time);
         
         % calculate E_in
-        Y_pred = rnn_predict(model, X_train);
-        cost = 0;
-        for i = 1:n_seq
-            Y_tr = expand_label(Y_train{i}, model.opts.num_class);
-            cost = cost + cross_entropy_loss(Y_tr, Y_pred{i});
-        end
-        cost = cost / n_seq;
-        model.cost(iter) = gather(cost);
+        costs = rnn_predict(model, X_train, Y_train);
+        model.cost(iter) = mean(costs);
         
         fprintf('RNN training: epoch %d (%.1f s), cost = %f\n', ...
-                iter, epoch_time, cost);
+                iter, epoch_time, model.cost(iter));
         
         if( ~mod(iter, model.opts.epoch_to_save) )
             model_filename = fullfile(model.opts.model_dir, sprintf('epoch%d.rnn', iter));

@@ -1,4 +1,4 @@
-function Y_pred = rnn_predict(model, X)
+function [costs, Y_pred] = rnn_predict(model, X, Y)
     
     if( strcmpi(model.opts.activation, 'sigmoid' ) )
         activation      = @sigmoid;
@@ -8,17 +8,17 @@ function Y_pred = rnn_predict(model, X)
         error('Unknown activation function %s\n', model.opts.activation);
     end
     
-    n_seq   = length(X);
-    Y_pred  = cell(n_seq, 1);
-    
-    
+    n_seq = length(X);
+    Y_pred = cell(n_seq, 1);
+    costs = zeros(n_seq, 1);
+        
     for i = 1:n_seq
         
-        x = (X{i});
+        x = X{i};
         n_data = size(X{i}, 1);
-        y_pred = (zeros(n_data, model.opts.structure(end)));
+        y_pred = zeros(n_data, model.opts.structure(end));
         
-        model.M = (zeros(size(model.M))); % clear memory layer
+        model.M = zeros(size(model.M)); % clear memory layer
 
         for j = 1:n_data
             a = x(j, :)';
@@ -36,7 +36,9 @@ function Y_pred = rnn_predict(model, X)
             y_pred(j, :) = y';
         end
         
-        Y_pred{i} = y_pred;
+        Y_tr = expand_label(Y{i}, model.opts.num_class);
+        costs(i) = cross_entropy_loss(Y_tr, y_pred);
+        [~, Y_pred{i}] = max(y_pred, [], 2);
     end
     
 end

@@ -13,11 +13,11 @@ min_test_len = 15
 max_test_len = 20
 output_path = './'
 
-depend = 1
+depend = 2
 
 p = 0.75 #regular_behavior_prob
 
-choice_num = 3
+choice_num = 2
 
 argc = len(sys.argv)
 

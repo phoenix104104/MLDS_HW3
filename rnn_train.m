@@ -137,7 +137,12 @@ function model = rnn_train(model, X_train, Y_train)
         
         fprintf('RNN training: epoch %d (%.1f s), cost = %f\n', ...
                 iter, epoch_time, cost);
-
+        
+        if( ~mod(iter, model.opts.epoch_to_save) )
+            model_filename = fullfile(model.opts.model_dir, sprintf('epoch%d.rnn', iter));
+            rnn_save_model(model_filename, model);
+        end
+            
     end % end of epoch
 
 end

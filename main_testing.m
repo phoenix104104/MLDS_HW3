@@ -2,44 +2,18 @@ addpath('util');
 
 input_dir = '../data/easy2-c2';
 train_name = 'train';
-normalize = 1;
 
 
-tic
-%train_filename = fullfile(input_dir, 'train', sprintf('%s', train_name));
-%[Y_train, X_train, mu, sigma] = rnn_load_data(train_filename, normalize);
-
-train_filename = fullfile(input_dir, 'train', sprintf('%s.mat', train_name));
-[Y_train, X_train, mu, sigma] = rnn_load_binary_data(train_filename, normalize);
-toc
-
-if( normalize )
-    filename = fullfile(input_dir, sprintf('%s_mu_sigma.mat', train_name));
-    fprintf('Save %s\n', filename);
-    save(filename, 'mu', 'sigma');
-end
-
-
-num_class = find_max_label(Y_train);
-num_data = length(Y_train);
-num_dim = size(X_train{1}, 2);
-fprintf('Input data size = %d\n', num_data);
-fprintf('Feature dimension = %d\n', num_dim);
-
-opts.num_class      = num_class;
-opts.num_data       = num_data;
-opts.num_dim        = num_dim;
-opts.normalize      = normalize;
+opts.normalize      = 1;
 opts.learning_rate  = 0.01;
 opts.epoch          = 1000;
-opts.epoch_to_save  = 50;
+opts.epoch_to_save  = 3;
 opts.weight_decay   = 0;
 opts.momentum       = 0.0;
 %opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
 opts.hidden         = 100;
-opts.structure      = [num_dim, opts.hidden, num_class];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd';
 
@@ -51,15 +25,17 @@ parameter = sprintf('%s_hidden%d_lr%s_wd%s_m%s_bptt%s_thr%s', ...
                  num2str(opts.gradient_thr));
              
 opts.model_dir = fullfile('../model', parameter);
-if( ~exist(opts.model_dir, 'dir') )
-    fprintf('mkdir %s\n', opts.model_dir);
-    mkdir(opts.model_dir);
-end
 
+iter = 50;
+model_filename = fullfile(opts.model_dir, sprintf('epoch%d.rnn', iter));
+
+model = rnn_load_model(model_filename);
              
-model = rnn_init(opts);
-model = rnn_train(model, X_train, Y_train);
-
+if( opts.normalize )
+    filename = fullfile(input_dir, sprintf('%s_mu_sigma.mat', train_name));
+    fprintf('Load %s\n', filename);
+    load(filename);
+end
 
 test_dir = fullfile(input_dir, 'test');
 fprintf('Load test data from %s\n', test_dir);
@@ -78,13 +54,14 @@ Y_pred = cell(N, 1);
 fprintf('RNN testing...\n');
 for t = 1:N
     test_filename = fullfile(test_dir, test_list{t});
-    [Y_test, X_test, mu, sigma] = rnn_load_data(test_filename, normalize, mu, sigma, 1);
+    [Y_test, X_test, mu, sigma] = rnn_load_data(test_filename, opts.normalize, mu, sigma, 1);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
     result(t) = res-1;
     Y_pred{t} = y_pred;
 end
 
-filename = sprintf('../pred/%s.csv', parameter);
+filename = fullfile(opts.model_dir, sprintf('epoch%d.csv', iter));
 save_kaggle_csv(filename, result);
+
 % answer = dlmread(fullfile(input_dir, 'testing_ans'));
 % acc = mean(answer == result)

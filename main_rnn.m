@@ -1,23 +1,20 @@
 addpath('util');
 
 input_dir = '../feature_1_100/Vec';
-train_name = 'train_001';
-normalize = 1;
+
+data_list = 1:2;
+train_name = 'train_1to2'; % define by yourself
+train_name_list = {};
+for i = 1:length(data_list)
+    train_name_list{i} = fullfile(input_dir, 'train', sprintf('train_%03d.mat', data_list(i)));
+end
 
 
 tic
-% train_filename = fullfile(input_dir, 'train', sprintf('%s', train_name));
-% [Y_train, X_train, mu, sigma] = rnn_load_data(train_filename, normalize);
+% [Y_train, X_train] = rnn_load_data(train_name_list);
 
-train_filename = fullfile(input_dir, 'train', sprintf('%s.mat', train_name));
-[Y_train, X_train, mu, sigma] = rnn_load_binary_data(train_filename, normalize);
+[Y_train, X_train] = rnn_load_binary_data(train_name_list);
 toc
-
-if( normalize )
-    filename = fullfile(input_dir, sprintf('%s_mu_sigma.mat', train_name));
-    fprintf('Save %s\n', filename);
-    save(filename, 'mu', 'sigma');
-end
 
 
 num_class = find_max_label(Y_train);
@@ -29,7 +26,6 @@ fprintf('Feature dimension = %d\n', num_dim);
 opts.num_class      = num_class;
 opts.num_data       = num_data;
 opts.num_dim        = num_dim;
-opts.normalize      = normalize;
 opts.learning_rate  = 0.01;
 opts.epoch          = 1000;
 opts.epoch_to_save  = 50;
@@ -78,7 +74,7 @@ Y_pred = cell(N, 1);
 fprintf('RNN testing...\n');
 for t = 1:N
     test_filename = fullfile(test_dir, test_list{t});
-    [Y_test, X_test, mu, sigma] = rnn_load_data(test_filename, normalize, mu, sigma, 1);
+    [Y_test, X_test] = rnn_load_data(test_filename, 1);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
     result(t) = res-1;
     Y_pred{t} = y_pred;

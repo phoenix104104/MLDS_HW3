@@ -1,25 +1,23 @@
-function [y, X, mu, sigma] = rnn_load_binary_data(filename, is_normalize, mu, sigma)
+function [y, X] = rnn_load_binary_data(filename_list, mute)
     
-    fprintf('Load %s\n', filename);
-    
-    load(filename);
-    yi = D(:, 1);
-    Xi = D(:, 2:end);
-    clear D;
-    
-    
-    if( is_normalize )
-        if( nargin < 4 )
-            % training data normalization
-            [Xi, mu, sigma] = normalize_data(Xi);
-        else
-            % testing data normalization (use mu, sigma from training data)
-            [Xi, mu, sigma] = normalize_data(Xi, mu, sigma);
-        end
-    else
-        mu = 0;
-        sigma = 1;
+    if( ~exist('mute', 'var') )
+        mute = 0;
     end
+    
+    yi = [];
+    Xi = [];
+    for i = 1:length(filename_list)
+        filename = filename_list{i};
+        if( ~mute )
+            fprintf('Load %s\n', filename);
+        end
+    
+        load(filename);
+        yi = [yi; D(:, 1)];
+        Xi = [Xi; D(:, 2:end)];
+    end
+    clear D; % clear loaded matrix
+
     
     split_index = find(yi == 0);
     N = length(split_index);

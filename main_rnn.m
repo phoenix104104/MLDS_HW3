@@ -1,7 +1,9 @@
 addpath('util');
 
-input_dir = '../feature_1_100/Vec';
+%input_dir = '../data/test2-c3';
+%train_name_list{1} = fullfile(input_dir, 'train', 'train');
 
+input_dir = '../feature_1_100/Vec';
 data_list = 1:2;
 train_name = 'train_1to2'; % define by yourself
 train_name_list = {};
@@ -9,10 +11,8 @@ for i = 1:length(data_list)
     train_name_list{i} = fullfile(input_dir, 'train', sprintf('train_%03d.mat', data_list(i)));
 end
 
-
 tic
-% [Y_train, X_train] = rnn_load_data(train_name_list);
-
+%[Y_train, X_train] = rnn_load_data(train_name_list);
 [Y_train, X_train] = rnn_load_binary_data(train_name_list);
 toc
 
@@ -28,7 +28,7 @@ opts.num_data       = num_data;
 opts.num_dim        = num_dim;
 opts.learning_rate  = 0.01;
 opts.epoch          = 1000;
-opts.epoch_to_save  = 50;
+opts.epoch_to_save  = 10;
 opts.weight_decay   = 0.0005;
 opts.momentum       = 0.9;
 %opts.rmsprop_alpha  = 0.9;
@@ -72,8 +72,9 @@ N = length(test_list);
 result = zeros(N, 1);
 Y_pred = cell(N, 1);
 fprintf('RNN testing...\n');
+test_filename = {};
 for t = 1:N
-    test_filename = fullfile(test_dir, test_list{t});
+    test_filename{1} = fullfile(test_dir, test_list{t});
     [Y_test, X_test] = rnn_load_data(test_filename, 1);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
     result(t) = res-1;
@@ -82,5 +83,5 @@ end
 
 filename = sprintf('../pred/%s.csv', parameter);
 save_kaggle_csv(filename, result);
-answer = dlmread(fullfile(input_dir, 'testing_ans'));
-acc = mean(answer == result)
+% answer = dlmread(fullfile(input_dir, 'testing_ans'));
+% acc = mean(answer == result)

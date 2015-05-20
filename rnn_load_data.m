@@ -1,16 +1,21 @@
-function [y, X] = rnn_load_data(filename, mute)
+function [y, X] = rnn_load_data(filename_list, mute)
     
     if( ~exist('mute', 'var') )
         mute = 0;
     end
     
-    if( ~mute )
-        fprintf('Load %s\n', filename);
+    yi = [];
+    Xi = [];
+    for i = 1:length(filename_list)
+        filename = filename_list{i};
+        if( ~mute )
+            fprintf('Load %s\n', filename);
+        end
+    
+        D = dlmread(filename);
+        yi = [yi; D(:, 1)];
+        Xi = [Xi; D(:, 2:end)];
     end
-
-    D = dlmread(filename);
-    yi = D(:, 1);
-    Xi = D(:, 2:end);
     clear D;
 
     split_index = find(yi == 0);

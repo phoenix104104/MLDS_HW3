@@ -1,10 +1,6 @@
 function model = rnn_train(model, X_train, Y_train)
     
     fprintf('RNN training...\n');
-
-    num_dim     = model.opts.num_dim;
-    num_class   = model.opts.num_class;
-    epoch       = model.opts.epoch;
     
     if( strcmpi(model.opts.activation, 'sigmoid' ) )
         activation      = @sigmoid;
@@ -37,7 +33,7 @@ function model = rnn_train(model, X_train, Y_train)
     fprintf('%-20s = %s\n', 'Gradient threshold', num2str(model.opts.gradient_thr));
     fprintf('%-20s = %s\n', 'Activation', model.opts.activation);
     fprintf('%-20s = %s\n', 'Update method', model.opts.update_grad);
-    fprintf('%-20s = %d\n', 'Total epoch', epoch);
+    fprintf('%-20s = %d\n', 'Total epoch', model.opts.epoch);
     fprintf('==============================================\n');
     
     n_seq = length(X_train); % number of sequences
@@ -51,7 +47,7 @@ function model = rnn_train(model, X_train, Y_train)
     delta = cell(max_depth+1, 1);
     
     
-    for iter = 1:epoch
+    for iter = 1:model.opts.epoch
         
         index_list = randperm(n_seq); % shuffle
         epoch_time = tic;
@@ -97,11 +93,8 @@ function model = rnn_train(model, X_train, Y_train)
                 % back propagation
                 for curr_depth = 1:max_depth
                     y_pred = softmax(zo{curr_depth});
-
-                    %y_pred = zo{curr_depth};
                     
                     delta{curr_depth+1} = grad_entropy_softmax(y{curr_depth}, y_pred);
-                    %delta{curr_depth+1} = grad_l2_loss(y{curr_depth}', y_pred);
 
                     dadz = grad_activation(z{curr_depth});
                     delta{curr_depth} = ( model.Wo' * delta{curr_depth+1} ) .* dadz;
@@ -130,7 +123,6 @@ function model = rnn_train(model, X_train, Y_train)
         for i = 1:n_seq
             Y_tr = expand_label(Y_train{i}, model.opts.num_class);
             cost = cost + cross_entropy_loss(Y_tr, Y_pred{i});
-            %cost = cost + l2_loss(Y_train{i}, Y_pred{i});
         end
         cost = cost / n_seq;
         model.cost(iter) = gather(cost);

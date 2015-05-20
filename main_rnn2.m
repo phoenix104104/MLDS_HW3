@@ -1,0 +1,79 @@
+addpath('util');
+
+%input_dir = '../data/test2-c3';
+%train_name_list{1} = fullfile(input_dir, 'train', 'train');
+
+input_dir = '../feature_1_100_reduce/Vec';
+train_dir = fullfile(input_dir, 'train');
+data_list = 1:2;
+train_name = 'train_all'; % define by yourself
+train_name_list = {};
+for i = 1:length(data_list)
+    train_name_list{i} = sprintf('train_%03d.mat', data_list(i));
+end
+
+num_class = 3784;
+num_dim = 100;
+fprintf('Feature dimension = %d\n', num_dim);
+
+opts.num_class      = num_class;
+opts.num_dim        = num_dim;
+opts.learning_rate  = 0.01;
+opts.epoch          = 100;
+opts.epoch_to_save  = 5;
+opts.weight_decay   = 0.0005;
+opts.momentum       = 0.9;
+%opts.rmsprop_alpha  = 0.9;
+opts.bptt_depth     = 3;
+opts.gradient_thr   = 0.5;
+opts.hidden         = 100;
+opts.structure      = [num_dim, opts.hidden, num_class];
+opts.activation     = 'sigmoid'; % options: sigmoid, relu
+opts.update_grad    = 'sgd';
+
+
+parameter = sprintf('%s_hidden%d_lr%s_wd%s_m%s_bptt%s_thr%s', ...
+                 train_name, opts.hidden, ...
+                 num2str(opts.learning_rate), num2str(opts.weight_decay), ...
+                 num2str(opts.momentum), num2str(opts.bptt_depth), ...
+                 num2str(opts.gradient_thr));
+             
+opts.model_dir = fullfile('../model', parameter);
+if( ~exist(opts.model_dir, 'dir') )
+    fprintf('mkdir %s\n', opts.model_dir);
+    mkdir(opts.model_dir);
+end
+
+             
+model = rnn_init(opts);
+model = rnn_train2(model, train_dir, train_name_list);
+
+
+test_dir = fullfile(input_dir, 'test');
+fprintf('Load test data from %s\n', test_dir);
+L = dir(test_dir);
+test_list = {};
+for i = 1:length(L)
+    if(L(i).name(1) == '.')
+        continue;
+    end
+    test_list{end+1} = L(i).name;
+end
+
+N = length(test_list);
+result = zeros(N, 1);
+Y_pred = cell(N, 1);
+fprintf('RNN testing...\n');
+for t = 1:N
+    [Y_test, X_test] = rnn_load_data(test_dir, test_list{t}, 1);
+    [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
+    result(t) = res;
+    Y_pred{t} = y_pred;
+end
+
+filename = fullfile(opts.model_dir, sprintf('epoch%d.csv', opts.epoch));
+save_kaggle_csv(filename, result);
+
+% answer = dlmread(fullfile(input_dir, 'testing_ans'));
+answer = dlmread('google.ans');
+acc = mean(answer == result)

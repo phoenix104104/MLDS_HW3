@@ -3,7 +3,7 @@ addpath('util');
 %input_dir = '../data/test2-c3';
 %train_name_list{1} = fullfile(input_dir, 'train', 'train');
 
-input_dir = '../feature_1_100/Vec';
+input_dir = '../feature_1_100_reduce/Vec';
 data_list = 1:2;
 train_name = 'train_1to2'; % define by yourself
 train_name_list = {};

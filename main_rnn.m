@@ -5,8 +5,8 @@ addpath('util');
 
 input_dir = '../feature_1_100_reduce/Vec';
 train_dir = fullfile(input_dir, 'train');
-data_list = 1:2;
-train_name = 'train_1to2'; % define by yourself
+data_list = 1;
+train_name = 'train_001'; % define by yourself
 train_name_list = {};
 for i = 1:length(data_list)
     train_name_list{i} = sprintf('train_%03d.mat', data_list(i));
@@ -18,7 +18,8 @@ tic
 toc
 
 
-num_class = find_max_label(Y_train);
+%num_class = find_max_label(Y_train);
+num_class = 3784;
 num_data = length(Y_train);
 num_dim = size(X_train{1}, 2);
 fprintf('Input data size = %d\n', num_data);
@@ -35,7 +36,7 @@ opts.momentum       = 0.9;
 %opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
-opts.hidden         = 1000;
+opts.hidden         = 100;
 opts.structure      = [num_dim, opts.hidden, num_class];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd';

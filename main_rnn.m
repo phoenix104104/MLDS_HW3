@@ -1,7 +1,7 @@
 addpath('util');
 
 input_dir = '../feature_1_100/Vec';
-train_name = 'train_076';
+train_name = 'train_001';
 normalize = 1;
 
 
@@ -31,14 +31,14 @@ opts.num_data       = num_data;
 opts.num_dim        = num_dim;
 opts.normalize      = normalize;
 opts.learning_rate  = 0.01;
-opts.epoch          = 100;
-opts.epoch_to_save  = 0;
-opts.weight_decay   = 0;
+opts.epoch          = 1000;
+opts.epoch_to_save  = 50;
+opts.weight_decay   = 0.0005;
 opts.momentum       = 0.9;
 %opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
-opts.hidden         = 20;
+opts.hidden         = 1000;
 opts.structure      = [num_dim, opts.hidden, num_class];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd';

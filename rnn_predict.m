@@ -14,11 +14,11 @@ function Y_pred = rnn_predict(model, X)
     
     for i = 1:n_seq
         
-        x = X{i};
+        x = (X{i});
         n_data = size(X{i}, 1);
-        y_pred = zeros(n_data, model.opts.structure(end));
+        y_pred = (zeros(n_data, model.opts.structure(end)));
         
-        model.M = zeros(size(model.M)); % clear memory layer
+        model.M = (zeros(size(model.M))); % clear memory layer
 
         for j = 1:n_data
             a = x(j, :)';

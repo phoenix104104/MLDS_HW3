@@ -35,8 +35,8 @@ function [y, X, mu, sigma] = rnn_load_data(filename, is_normalize, mu, sigma, mu
     st = 1;
     for i = 1:N
         ed = split_index(i) - 1;
-        y{i} = yi(st:ed);
-        X{i} = Xi(st:ed, 1:end);
+        y{i} = yi(st+1:ed);
+        X{i} = Xi(st:ed-1, 1:end);
         st = split_index(i) + 1;
     end
     

@@ -2,8 +2,9 @@ function model = rnn_train(model, X_train, Y_train)
     
     fprintf('RNN training...\n');
 
-    dropout_prob    = model.opts.dropout_prob;
-    epoch           = model.opts.epoch;
+    num_dim     = model.opts.num_dim;
+    num_class   = model.opts.num_class;
+    epoch       = model.opts.epoch;
     
     if( strcmpi(model.opts.activation, 'sigmoid' ) )
         activation      = @sigmoid;
@@ -49,35 +50,37 @@ function model = rnn_train(model, X_train, Y_train)
     zo = cell(max_depth, 1);
     delta = cell(max_depth+1, 1);
     
+    
     for iter = 1:epoch
         
         index_list = randperm(n_seq); % shuffle
         epoch_time = tic;
         
         for i = 1:n_seq
-            X = X_train{index_list(i)};
-            Y = Y_train{index_list(i)};
+            
+            X = (X_train{index_list(i)});
+            Y = (Y_train{index_list(i)});
             Y = expand_label(Y, model.opts.num_class);
             
             M_init = zeros(size(model.M));
             
             n_data = size(X, 1); % number of data in one sequence
             
-            
             for j = max_depth:n_data
                 
                 % fetch data
                 for k = 1:max_depth
                     ptr = j - max_depth + k; % pointer to access X, Y
-                    x{k} = X(ptr, :);
-                    y{k} = Y(ptr, :);
+                    x{k} = X(ptr, :)';
+                    y{k} = Y(ptr, :)';
                 end
                 
                 model.M = M_init;
                 
+                
                 % forward
                 for curr_depth = 1:max_depth
-                    z{curr_depth} = (model.Wi * x{curr_depth}' + model.Bi) + ...
+                    z{curr_depth} = (model.Wi * x{curr_depth} + model.Bi) + ...
                                     (model.Wm * model.M + model.Bm);
                                 
                     a{curr_depth} = activation(z{curr_depth});
@@ -97,7 +100,7 @@ function model = rnn_train(model, X_train, Y_train)
 
                     %y_pred = zo{curr_depth};
                     
-                    delta{curr_depth+1} = grad_entropy_softmax(y{curr_depth}', y_pred);
+                    delta{curr_depth+1} = grad_entropy_softmax(y{curr_depth}, y_pred);
                     %delta{curr_depth+1} = grad_l2_loss(y{curr_depth}', y_pred);
 
                     dadz = grad_activation(z{curr_depth});
@@ -130,7 +133,7 @@ function model = rnn_train(model, X_train, Y_train)
             %cost = cost + l2_loss(Y_train{i}, Y_pred{i});
         end
         cost = cost / n_seq;
-        model.cost(iter) = cost;
+        model.cost(iter) = gather(cost);
         
         fprintf('RNN training: epoch %d (%.1f s), cost = %f\n', ...
                 iter, epoch_time, cost);
@@ -145,7 +148,7 @@ function model = calculate_gradient(model, x, a, delta, M_init, depth)
     
     thr = model.opts.gradient_thr;
     
-    % update Wo, Bo
+    % Wo, Bo
     dCdW = delta{depth+1} * a{depth}';
 	dCdB = delta{depth+1};
         
@@ -155,7 +158,7 @@ function model = calculate_gradient(model, x, a, delta, M_init, depth)
     model.dWo = model.dWo + dCdW;
     model.dBo = model.dBo + dCdB;
         
-    % update Wm, Bm
+    % Wm, Bm
     for d = 2:depth
         dCdW = delta{d} * a{d-1}';
         dCdB = delta{d};
@@ -176,9 +179,9 @@ function model = calculate_gradient(model, x, a, delta, M_init, depth)
     model.dWm = model.dWm + dCdW;
     model.dBm = model.dBm + dCdB;
         
-    % update Wi, Bi
+    % Wi, Bi
     for d = 1:depth
-        dCdW = delta{d} * x{d};
+        dCdW = delta{d} * x{d}';
         dCdB = delta{d};
         
         dCdW = clip_gradient(dCdW, thr);

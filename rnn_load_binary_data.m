@@ -9,6 +9,10 @@ function [y, X] = rnn_load_binary_data(file_dir, filename_list, mute)
         Xi = [];
         for i = 1:length(filename_list)
             filename = fullfile(file_dir, filename_list{i});
+            C = strsplit(filename, '.');
+            if( ~strcmp(C{end}, 'mat') )
+                error('Not a mat file %s', filename);
+            end
             if( ~mute )
                 fprintf('Load %s\n', filename);
             end

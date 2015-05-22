@@ -92,7 +92,9 @@ function model = rnn_train(model, X_train, Y_train)
                 % back propagation
                 for curr_depth = 1:max_depth
                     y_pred = softmax(zo{curr_depth});
-                    
+                    if( isnan(y_pred) )
+                        y_pred
+                    end
                     delta{curr_depth+1} = grad_entropy_softmax(y{curr_depth}, y_pred);
 
                     dadz = grad_activation(z{curr_depth});
@@ -119,7 +121,9 @@ function model = rnn_train(model, X_train, Y_train)
         % calculate E_in
         costs = rnn_predict(model, X_train, Y_train);
         model.cost(iter) = mean(costs);
-        
+        if( isnan(model.cost(iter)) )
+            model.cost(iter)
+        end
         fprintf('RNN training: epoch %d (%.1f s), cost = %f\n', ...
                 iter, epoch_time, model.cost(iter));
         

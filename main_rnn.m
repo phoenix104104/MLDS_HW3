@@ -1,27 +1,26 @@
 addpath('util');
 
-input_dir = '../data/easy2-c2';
-train_dir = fullfile(input_dir, 'train');
-train_name = 'test2-c2-p1';
-train_name_list = 'train';
-
-% input_dir = '../feature_1_100_reduce/Vec';
+% input_dir = '../data/easy2-c2-p1';
 % train_dir = fullfile(input_dir, 'train');
-% data_list = 1;
-% train_name = 'train_001'; % define by yourself
-% train_name_list = {};
-% for i = 1:length(data_list)
-%     train_name_list{i} = sprintf('train_%03d.mat', data_list(i));
-% end
+% train_name = 'test2-c2-p1';
+% train_name_list = 'train';
+
+input_dir = '../feature_1_100_reduce/Vec';
+train_dir = fullfile(input_dir, 'train');
+data_list = 1;
+train_name = 'train_001'; % define by yourself
+train_name_list = {};
+for i = 1:length(data_list)
+    train_name_list{i} = sprintf('train_%03d.mat', data_list(i));
+end
 
 tic
-[Y_train, X_train] = rnn_load_data(train_dir, train_name_list);
-% [Y_train, X_train] = rnn_load_binary_data(train_dir, train_name_list);
+%[Y_train, X_train] = rnn_load_data(train_dir, train_name_list);
+[Y_train, X_train] = rnn_load_binary_data(train_dir, train_name_list);
 toc
 
-
-num_class = find_max_label(Y_train);
-%num_class = 3784;
+%num_class = find_max_label(Y_train);
+num_class = 3784;
 num_data = length(Y_train);
 num_dim = size(X_train{1}, 2);
 fprintf('Input data size = %d\n', num_data);
@@ -31,17 +30,17 @@ opts.num_class      = num_class;
 opts.num_data       = num_data;
 opts.num_dim        = num_dim;
 opts.learning_rate  = 0.01;
-opts.epoch          = 200;
-opts.epoch_to_save  = 0;
+opts.epoch          = 100;
+opts.epoch_to_save  = 10;
 opts.weight_decay   = 0.0005;
 opts.momentum       = 0.9;
-%opts.rmsprop_alpha  = 0.9;
+opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
-opts.hidden         = 10;
+opts.hidden         = 100;
 opts.structure      = [num_dim, opts.hidden, num_class];
-opts.activation     = 'relu'; % options: sigmoid, relu
-opts.update_grad    = 'sgd';
+opts.activation     = 'sigmoid'; % options: sigmoid, relu
+opts.update_grad    = 'sgd'; % options: sgd, rmsprop
 
 
 parameter = sprintf('%s_hidden%d_lr%s_wd%s_m%s_bptt%s_thr%s', ...
@@ -84,8 +83,8 @@ for t = 1:N
 end
 
 filename = fullfile(opts.model_dir, sprintf('epoch%d.csv', opts.epoch));
-% save_kaggle_csv(filename, result);
+save_kaggle_csv(filename, result);
 
-answer = dlmread(fullfile(input_dir, 'testing_ans'))+1;
-%answer = dlmread('google.ans');
+%answer = dlmread(fullfile(input_dir, 'testing_ans'))+1;
+answer = dlmread('google.ans');
 acc = mean(answer == result)

@@ -21,14 +21,22 @@ function model = rnn_init(opts)
     model.dWo = (zeros(size(model.Wo), 'single'));
     model.dBo = (zeros(size(model.Bo), 'single'));
     
-    % for momentum
+    % for momentum, RMSProp
     model.mWi = (zeros(size(model.Wi), 'single'));
     model.mBi = (zeros(size(model.Bi), 'single'));
     model.mWm = (zeros(size(model.Wm), 'single'));
     model.mBm = (zeros(size(model.Bm), 'single'));
     model.mWo = (zeros(size(model.Wo), 'single'));
     model.mBo = (zeros(size(model.Bo), 'single'));
-    
+
+    % for RMSProp
+    model.sWi = (zeros(size(model.Wi), 'single'));
+    model.sBi = (zeros(size(model.Bi), 'single'));
+    model.sWm = (zeros(size(model.Wm), 'single'));
+    model.sBm = (zeros(size(model.Bm), 'single'));
+    model.sWo = (zeros(size(model.Wo), 'single'));
+    model.sBo = (zeros(size(model.Bo), 'single'));
+
     model.cost = zeros(opts.epoch, 1);
     
 end

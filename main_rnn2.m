@@ -1,8 +1,5 @@
 addpath('util');
 
-%input_dir = '../data/test2-c3';
-%train_name_list{1} = fullfile(input_dir, 'train', 'train');
-
 input_dir = '../feature_1_100_reduce/Vec';
 train_dir = fullfile(input_dir, 'train');
 data_list = 1:2;
@@ -23,13 +20,13 @@ opts.epoch          = 100;
 opts.epoch_to_save  = 5;
 opts.weight_decay   = 0.0005;
 opts.momentum       = 0.9;
-%opts.rmsprop_alpha  = 0.9;
+opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
 opts.hidden         = 100;
 opts.structure      = [num_dim, opts.hidden, num_class];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
-opts.update_grad    = 'sgd';
+opts.update_grad    = 'sgd'; % options: sgd, rmsprop
 
 
 parameter = sprintf('%s_hidden%d_lr%s_wd%s_m%s_bptt%s_thr%s', ...

@@ -19,16 +19,15 @@ tic
 [Y_train, X_train] = rnn_load_binary_data(train_dir, train_name_list);
 toc
 
-%num_class = find_max_label(Y_train);
-num_class = 3784;
-num_data = length(Y_train);
-num_dim = size(X_train{1}, 2);
-fprintf('Input data size = %d\n', num_data);
-fprintf('Feature dimension = %d\n', num_dim);
+class_list = dlmread(class_filename);
+C_train = map_y_to_class(Y_train, class_list);
 
-opts.num_class      = num_class;
-opts.num_data       = num_data;
-opts.num_dim        = num_dim;
+%opts.num_class      = find_max_label(Y_train);
+opts.num_label      = 3784;
+opts.num_data       = length(Y_train);
+opts.num_class      = max(class_list);
+opts.num_dim        = size(X_train{1}, 2);
+
 opts.learning_rate  = 0.01;
 opts.epoch          = 100;
 opts.epoch_to_save  = 10;
@@ -37,8 +36,8 @@ opts.momentum       = 0.9;
 opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
-opts.hidden         = 100;
-opts.structure      = [num_dim, opts.hidden, num_class];
+opts.hidden         = 50;
+opts.structure      = [opts.num_dim, opts.hidden, opts.num_label+opts.num_class];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd'; % options: sgd, rmsprop
 

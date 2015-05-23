@@ -21,7 +21,6 @@ function model = frnn_train_all(model, train_dir, train_namelist)
     end
     
     fprintf('==============================================\n');
-    fprintf('%-20s = %s\n', 'Training data size', num2str(model.opts.num_data));
     fprintf('%-20s = %s\n', 'Feature dimension', num2str(model.opts.num_dim));
     fprintf('%-20s = %s\n', 'Class', num2str(model.opts.num_class));
     fprintf('%-20s = %s\n', 'Structure', num2str(model.opts.structure));

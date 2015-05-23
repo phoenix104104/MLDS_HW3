@@ -42,8 +42,8 @@ if( ~exist(opts.model_dir, 'dir') )
 end
 
              
-model = rnn_init(opts);
-model = rnn_train_all(model, train_dir, train_name_list);
+model = frnn_init(opts, class_map);
+model = frnn_train_all(model, train_dir, train_name_list);
 
 
 test_dir = fullfile(input_dir, 'test');
@@ -63,7 +63,7 @@ Y_pred = cell(N, 1);
 fprintf('FRNN testing...\n');
 for t = 1:N
     [Y_test, X_test] = rnn_load_data(test_dir, test_list{t}, 1);
-    [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
+    [res, y_pred, cost] = frnn_test(model, X_test, Y_test);
     result(t) = res;
     Y_pred{t} = y_pred;
 end

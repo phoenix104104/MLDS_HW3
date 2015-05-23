@@ -55,7 +55,7 @@ function model = rnn_train_all(model, train_dir, train_namelist, class_map)
             n_seq = length(X_train); % number of sequences
             index_list = randperm(n_seq); % shuffle
             
-            fprintf('FRNN training: ');
+            fprintf('RNN training: ');
             batch_time = tic;
             
             for i = 1:n_seq

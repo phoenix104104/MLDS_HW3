@@ -61,7 +61,7 @@ function model = frnn_train_all(model, train_dir, train_namelist)
             index_list = randperm(n_seq); % shuffle
             
         
-            fprintf('RNN training: ');
+            fprintf('FRNN training: ');
             epoch_time = tic;
 
             for i = 1:n_seq

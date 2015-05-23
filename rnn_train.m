@@ -199,21 +199,21 @@ function model = sgd(model)
     model.mBo = mu * model.mBo - eta * model.dBo / d;
     
     model.Wo = lambda * model.Wo + model.mWo;
-    model.Bo =          model.Bo + model.mBo;
+    model.Bo = lambda * model.Bo + model.mBo;
     
     % Wm, Bm
     model.mWm = mu * model.mWm - eta * model.dWm / ds;
     model.mBm = mu * model.mBm - eta * model.dBm / ds;
     
     model.Wm = lambda * model.Wm + model.mWm;
-    model.Bm =          model.Bm + model.mBm;
+    model.Bm = lambda * model.Bm + model.mBm;
     
     % Wi, Bi
     model.mWi = mu * model.mWi - eta * model.dWi / ds;
     model.mBi = mu * model.mBi - eta * model.dBi / ds;
     
     model.Wi = lambda * model.Wi + model.mWi;
-    model.Bi =          model.Bi + model.mBi;
+    model.Bi = lambda * model.Bi + model.mBi;
     
     % clear gradient buffer
     model.dWi = zeros(size(model.Wi));
@@ -257,7 +257,7 @@ function model = RMSProp(model)
     model.mBo = mu * model.mBo - eta * model.dBo;
     
     model.Wo = lambda * model.Wo + model.mWo;
-    model.Bo =          model.Bo + model.mBo;
+    model.Bo = lambda * model.Bo + model.mBo;
     
     % Wm, Bm
     model.sWm = sqrt( alpha * model.sWm.^2 + (1 - alpha) * model.dWm.^2 );
@@ -273,7 +273,7 @@ function model = RMSProp(model)
     model.mBm = mu * model.mBm - eta * model.dBm;
     
     model.Wm = lambda * model.Wm + model.mWm;
-    model.Bm =          model.Bm + model.mBm;
+    model.Bm = lambda * model.Bm + model.mBm;
     
     % Wi, Bi
     model.sWi = sqrt( alpha * model.sWi.^2 + (1 - alpha) * model.dWi.^2 );
@@ -289,6 +289,6 @@ function model = RMSProp(model)
     model.mBi = mu * model.mBi - eta * model.dBi;
     
     model.Wi = lambda * model.Wi + model.mWi;
-    model.Bi =          model.Bi + model.mBi;
+    model.Bi = lambda * model.Bi + model.mBi;
     
 end

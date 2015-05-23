@@ -291,7 +291,7 @@ function model = sgd(model, y_idx)
 %     model.mBo = mu * model.mBo - eta * mBo_next / d;
 % 
 %     model.Wo = lambda * model.Wo + model.mWo;
-%     model.Bo =          model.Bo + model.mBo;
+%     model.Bo = lambda * model.Bo + model.mBo;
         
     % Wc, Bc
     model.mWc = mu * model.mWc - eta * model.dWc / d;
@@ -331,65 +331,5 @@ function g = clip_gradient(g, thr)
     if( norm(g(:)) > thr )
         g = g / norm(g(:)) * thr;
     end
-    
-end
-
-
-function model = RMSProp(model)
-    
-    eta     = model.opts.learning_rate;
-    mu      = model.opts.momentum;
-    alpha   = model.opts.rmsprop_alpha;
-    lambda  = 1 - model.opts.weight_decay * eta;
-    eps     = 1e-4; % TODO: need tuning
-    thr     = model.opts.gradient_thr;
-    
-    % Wo, Bo
-    model.sWo = sqrt( alpha * model.sWo.^2 + (1 - alpha) * model.dWo.^2 );
-    model.sBo = sqrt( alpha * model.sBo.^2 + (1 - alpha) * model.dBo.^2 );
-    
-    model.dWo = model.dWo ./ sqrt( model.sWo + eps );
-    model.dBo = model.dBo ./ sqrt( model.sBo + eps );
-    
-    model.dWo = clip_gradient(model.dWo, thr);
-    model.dBo = clip_gradient(model.dBo, thr);
-    
-    model.mWo = mu * model.mWo - eta * model.dWo;
-    model.mBo = mu * model.mBo - eta * model.dBo;
-    
-    model.Wo = lambda * model.Wo + model.mWo;
-    model.Bo =          model.Bo + model.mBo;
-    
-    % Wm, Bm
-    model.sWm = sqrt( alpha * model.sWm.^2 + (1 - alpha) * model.dWm.^2 );
-    model.sBm = sqrt( alpha * model.sBm.^2 + (1 - alpha) * model.dBm.^2 );
-    
-    model.dWm = model.dWm ./ sqrt( model.sWm + eps );
-    model.dBm = model.dBm ./ sqrt( model.sBm + eps );
-    
-    model.dWm = clip_gradient(model.dWm, thr);
-    model.dBm = clip_gradient(model.dBm, thr);
-    
-    model.mWm = mu * model.mWm - eta * model.dWm;
-    model.mBm = mu * model.mBm - eta * model.dBm;
-    
-    model.Wm = lambda * model.Wm + model.mWm;
-    model.Bm =          model.Bm + model.mBm;
-    
-    % Wi, Bi
-    model.sWi = sqrt( alpha * model.sWi.^2 + (1 - alpha) * model.dWi.^2 );
-    model.sBi = sqrt( alpha * model.sBi.^2 + (1 - alpha) * model.dBi.^2 );
-    
-    model.dWi = model.dWi ./ sqrt( model.sWi + eps );
-    model.dBi = model.dBi ./ sqrt( model.sBi + eps );
-    
-    model.dWi = clip_gradient(model.dWi, thr);
-    model.dBi = clip_gradient(model.dBi, thr);
-    
-    model.mWi = mu * model.mWi - eta * model.dWi;
-    model.mBi = mu * model.mBi - eta * model.dBi;
-    
-    model.Wi = lambda * model.Wi + model.mWi;
-    model.Bi =          model.Bi + model.mBi;
     
 end

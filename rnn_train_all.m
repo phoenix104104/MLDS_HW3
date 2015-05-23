@@ -1,4 +1,4 @@
-function model = rnn_train_all(model, train_dir, train_namelist)
+function model = rnn_train_all(model, train_dir, train_namelist, class_map)
     
     fprintf('RNN training...\n');
     
@@ -50,6 +50,8 @@ function model = rnn_train_all(model, train_dir, train_namelist)
         for batch = 1:length(train_namelist)
             
             [Y_train, X_train] = rnn_load_binary_data(train_dir, train_namelist{batch});
+            Y_train = map_y_to_class(Y_train, class_map);
+            
             n_seq = length(X_train); % number of sequences
             index_list = randperm(n_seq); % shuffle
             
@@ -202,21 +204,21 @@ function model = sgd(model)
     model.mBo = mu * model.mBo - eta * model.dBo;
     
     model.Wo = lambda * model.Wo + model.mWo;
-    model.Bo =          model.Bo + model.mBo;
+    model.Bo = lambda * model.Bo + model.mBo;
     
     % Wm, Bm
     model.mWm = mu * model.mWm - eta * model.dWm;
     model.mBm = mu * model.mBm - eta * model.dBm;
     
     model.Wm = lambda * model.Wm + model.mWm;
-    model.Bm =          model.Bm + model.mBm;
+    model.Bm = lambda * model.Bm + model.mBm;
     
     % Wi, Bi
     model.mWi = mu * model.mWi - eta * model.dWi;
     model.mBi = mu * model.mBi - eta * model.dBi;
     
     model.Wi = lambda * model.Wi + model.mWi;
-    model.Bi =          model.Bi + model.mBi;
+    model.Bi = lambda * model.Bi + model.mBi;
     
     % clear gradient buffer
     model.dWi = zeros(size(model.Wi));
@@ -260,7 +262,7 @@ function model = RMSProp(model)
     model.mBo = mu * model.mBo - eta * model.dBo;
     
     model.Wo = lambda * model.Wo + model.mWo;
-    model.Bo =          model.Bo + model.mBo;
+    model.Bo = lambda * model.Bo + model.mBo;
     
     % Wm, Bm
     model.sWm = sqrt( alpha * model.sWm.^2 + (1 - alpha) * model.dWm.^2 );
@@ -276,7 +278,7 @@ function model = RMSProp(model)
     model.mBm = mu * model.mBm - eta * model.dBm;
     
     model.Wm = lambda * model.Wm + model.mWm;
-    model.Bm =          model.Bm + model.mBm;
+    model.Bm = lambda * model.Bm + model.mBm;
     
     % Wi, Bi
     model.sWi = sqrt( alpha * model.sWi.^2 + (1 - alpha) * model.dWi.^2 );
@@ -292,6 +294,6 @@ function model = RMSProp(model)
     model.mBi = mu * model.mBi - eta * model.dBi;
     
     model.Wi = lambda * model.Wi + model.mWi;
-    model.Bi =          model.Bi + model.mBi;
+    model.Bi = lambda * model.Bi + model.mBi;
     
 end

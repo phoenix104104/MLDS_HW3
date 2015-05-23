@@ -18,21 +18,26 @@ tic
 %[Y_train, X_train] = rnn_load_data(train_dir, train_name_list);
 [Y_train, X_train] = rnn_load_binary_data(train_dir, train_name_list);
 toc
-Y_train = Y_train(1:500);
-X_train = X_train(1:500);
 
+
+class_filename = 'class_map/class_mapping_100';
+class_map = dlmread(class_filename);
+
+fprintf('Mapping Y to C...\n');
+Y_train = map_y_to_class(Y_train, class_map);
 
 %opts.num_label      = find_max_label(Y_train);
-opts.num_label      = 3784;
+%opts.num_label      = 3784;
+opts.num_label      = 100;
 opts.num_data       = length(Y_train);
 opts.num_dim        = size(X_train{1}, 2);
 opts.learning_rate  = 0.01;
-opts.epoch          = 100;
-opts.epoch_to_save  = 10;
-opts.weight_decay   = 0.0005;
+opts.epoch          = 50;
+opts.epoch_to_save  = 0;
+opts.weight_decay   = 0.005;
 opts.momentum       = 0.9;
 opts.rmsprop_alpha  = 0.9;
-opts.bptt_depth     = 3;
+opts.bptt_depth     = 5;
 opts.gradient_thr   = 0.5;
 opts.hidden         = 50;
 opts.structure      = [opts.num_dim, opts.hidden, opts.num_label];
@@ -74,6 +79,7 @@ Y_pred = cell(N, 1);
 fprintf('RNN testing...\n');
 for t = 1:N
     [Y_test, X_test] = rnn_load_data(test_dir, test_list{t}, 1);
+    Y_test = map_y_to_class(Y_test, class_map);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
     result(t) = res;
     Y_pred{t} = y_pred;

@@ -9,12 +9,16 @@ for i = 1:length(data_list)
     train_name_list{i} = sprintf('train_%03d.mat', data_list(i));
 end
 
-opts.num_label      = 3784;
+class_filename = 'class_map/class_mapping_100';
+class_map = dlmread(class_filename);
+
+%opts.num_label      = 3784;
+opts.num_label      = 100;
 opts.num_dim        = 100;
 opts.learning_rate  = 0.01;
 opts.epoch          = 100;
 opts.epoch_to_save  = 5;
-opts.weight_decay   = 0.0005;
+opts.weight_decay   = 0.005;
 opts.momentum       = 0.9;
 opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
@@ -39,7 +43,7 @@ end
 
              
 model = rnn_init(opts);
-model = rnn_train_all(model, train_dir, train_name_list);
+model = rnn_train_all(model, train_dir, train_name_list, class_map);
 
 
 test_dir = fullfile(input_dir, 'test');
@@ -59,6 +63,7 @@ Y_pred = cell(N, 1);
 fprintf('RNN testing...\n');
 for t = 1:N
     [Y_test, X_test] = rnn_load_data(test_dir, test_list{t}, 1);
+    Y_test = map_y_to_class(Y_test, class_map);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
     result(t) = res;
     Y_pred{t} = y_pred;

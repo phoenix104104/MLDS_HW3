@@ -2,7 +2,7 @@ addpath('util');
 
 input_dir = '../feature_1_100_reduce/Vec';
 train_dir = fullfile(input_dir, 'train');
-data_list = 1:2;
+data_list = 1:73;
 train_name = 'train_all'; % define by yourself
 train_name_list = {};
 for i = 1:length(data_list)
@@ -24,7 +24,7 @@ opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
 opts.hidden         = 50;
-opts.structure      = [num_dim, opts.hidden, num_label];
+opts.structure      = [opts.num_dim, opts.hidden, opts.num_label];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd'; % options: sgd, rmsprop
 

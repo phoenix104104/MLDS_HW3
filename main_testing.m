@@ -1,21 +1,24 @@
 addpath('util');
 
 input_dir = '../feature_1_100_reduce/Vec';
-train_name = 'train_1to2';
+train_name = 'train_all';
+
+class_filename = 'class_map/class_mapping_100';
+class_map = dlmread(class_filename);
 
 opts.learning_rate  = 0.01;
-opts.epoch_to_save  = 3;
-opts.weight_decay   = 0;
-opts.momentum       = 0.0;
-%opts.rmsprop_alpha  = 0.9;
+opts.epoch_to_save  = 1;
+opts.weight_decay   = 0.005;
+opts.momentum       = 0.6;
+opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
-opts.hidden         = 1000;
+opts.hidden         = 100;
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd';
 
 
-parameter = sprintf('%s_hidden%d_lr%s_wd%s_m%s_bptt%s_thr%s', ...
+parameter = sprintf('rnn_%s_hidden%d_lr%s_wd%s_m%s_bptt%s_thr%s', ...
                  train_name, opts.hidden, ...
                  num2str(opts.learning_rate), num2str(opts.weight_decay), ...
                  num2str(opts.momentum), num2str(opts.bptt_depth), ...
@@ -23,7 +26,7 @@ parameter = sprintf('%s_hidden%d_lr%s_wd%s_m%s_bptt%s_thr%s', ...
              
 opts.model_dir = fullfile('../model', parameter);
 
-epoch = 50;
+epoch = 1; % epoch to load
 model_filename = fullfile(opts.model_dir, sprintf('epoch%d.rnn', iter));
 model = rnn_load_model(model_filename);
              
@@ -47,6 +50,7 @@ test_filename = {};
 for t = 1:N
     test_filename{1} = test_list{t};
     [Y_test, X_test] = rnn_load_data(test_dir, test_filename, 1);
+    Y_test = map_y_to_class(Y_test, class_map);
     [res, y_pred, cost] = rnn_test(model, X_test, Y_test);
     result(t) = res;
     Y_pred{t} = y_pred;

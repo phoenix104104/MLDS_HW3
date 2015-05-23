@@ -1,6 +1,6 @@
 function model = frnn_init(opts, class_map)
     
-    fprintf('Initialize RNN...\n');
+    fprintf('Initialize FRNN...\n');
 
     model.opts = opts;
     

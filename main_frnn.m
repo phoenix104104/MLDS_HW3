@@ -31,7 +31,7 @@ opts.num_dim        = size(X_train{1}, 2);
 
 opts.learning_rate  = 0.01;
 opts.epoch          = 100;
-opts.epoch_to_save  = 0;
+opts.epoch_to_save  = 10;
 opts.weight_decay   = 0.005;
 opts.momentum       = 0.0;
 opts.rmsprop_alpha  = 0.9;

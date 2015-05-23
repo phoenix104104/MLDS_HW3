@@ -1,4 +1,4 @@
-function model = rnn_train(model, X_train, Y_train)
+function model = rnn_train_all(model, train_dir, train_namelist)
     
     fprintf('RNN training...\n');
     
@@ -23,7 +23,6 @@ function model = rnn_train(model, X_train, Y_train)
     end
     
     fprintf('==============================================\n');
-    fprintf('%-20s = %s\n', 'Training data size', num2str(model.opts.num_data));
     fprintf('%-20s = %s\n', 'Structure', num2str(model.opts.structure));
     fprintf('%-20s = %s\n', 'Learning Rate', num2str(model.opts.learning_rate));
     fprintf('%-20s = %s\n', 'Momentum', num2str(model.opts.momentum));
@@ -35,7 +34,7 @@ function model = rnn_train(model, X_train, Y_train)
     fprintf('%-20s = %d\n', 'Total epoch', model.opts.epoch);
     fprintf('==============================================\n');
     
-    n_seq = length(X_train); % number of sequences
+    
     max_depth = model.opts.bptt_depth;
     
     x  = cell(max_depth, 1);
@@ -48,87 +47,94 @@ function model = rnn_train(model, X_train, Y_train)
     
     for iter = 1:model.opts.epoch
         
-        index_list = randperm(n_seq); % shuffle
-        
-        fprintf('RNN training: ');
-        epoch_time = tic;
-        
-        for i = 1:n_seq
+        for batch = 1:length(train_namelist)
             
-            X = (X_train{index_list(i)});
-            Y = (Y_train{index_list(i)});
-            Y = expand_label(Y, model.opts.num_label);
+            [Y_train, X_train] = rnn_load_binary_data(train_dir, train_namelist{batch});
+            n_seq = length(X_train); % number of sequences
+            index_list = randperm(n_seq); % shuffle
             
-            M_init = zeros(size(model.M));
+            fprintf('FRNN training: ');
+            batch_time = tic;
             
-            n_data = size(X, 1); % number of data in one sequence
-            
-            for j = max_depth:n_data
-                
-                % fetch data
-                for k = 1:max_depth
-                    ptr = j - max_depth + k; % pointer to access X, Y
-                    x{k} = X(ptr, :)';
-                    y{k} = Y(ptr, :)';
-                end
-                
-                model.M = M_init;
-                
-                
-                % forward
-                for curr_depth = 1:max_depth
-                    z{curr_depth} = (model.Wi * x{curr_depth} + model.Bi) + ...
-                                    (model.Wm * model.M + model.Bm);
-                                
-                    a{curr_depth} = activation(z{curr_depth});
-                    
-                    zo{curr_depth} = model.Wo * a{curr_depth} + model.Bo;
-                    
-                    model.M = a{curr_depth};
-                    
-                    if( curr_depth == 1 )
-                        M_next = model.M;
-                    end
-                end
-                
-                % back propagation
-                for curr_depth = 1:max_depth
-                    y_pred = softmax(zo{curr_depth});
-                    
-                    delta{curr_depth+1} = grad_entropy_softmax(y{curr_depth}, y_pred);
+            for i = 1:n_seq
 
-                    dadz = grad_activation(z{curr_depth});
-                    delta{curr_depth} = ( model.Wo' * delta{curr_depth+1} ) .* dadz;
+                X = (X_train{index_list(i)});
+                Y = (Y_train{index_list(i)});
+                Y = expand_label(Y, model.opts.num_label);
 
-                    for d = curr_depth-1:-1:1
-                        dadz = grad_activation(z{d});
-                        delta{d} = ( model.Wm' * delta{d+1} ) .* dadz;
+                M_init = zeros(size(model.M));
+
+                n_data = size(X, 1); % number of data in one sequence
+
+                for j = max_depth:n_data
+
+                    % fetch data
+                    for k = 1:max_depth
+                        ptr = j - max_depth + k; % pointer to access X, Y
+                        x{k} = X(ptr, :)';
+                        y{k} = Y(ptr, :)';
                     end
 
-                    model = calculate_gradient(model, x, a, delta, M_init, curr_depth);
-                end
-                
-                model = update_gradient(model);
-                
-                M_init = M_next;
+                    model.M = M_init;
+
+
+                    % forward
+                    for curr_depth = 1:max_depth
+                        z{curr_depth} = (model.Wi * x{curr_depth} + model.Bi) + ...
+                                        (model.Wm * model.M + model.Bm);
+
+                        a{curr_depth} = activation(z{curr_depth});
+
+                        zo{curr_depth} = model.Wo * a{curr_depth} + model.Bo;
+
+                        model.M = a{curr_depth};
+
+                        if( curr_depth == 1 )
+                            M_next = model.M;
+                        end
+                    end
+
+                    % back propagation
+                    for curr_depth = 1:max_depth
+                        y_pred = softmax(zo{curr_depth});
+
+                        delta{curr_depth+1} = grad_entropy_softmax(y{curr_depth}, y_pred);
+
+                        dadz = grad_activation(z{curr_depth});
+                        delta{curr_depth} = ( model.Wo' * delta{curr_depth+1} ) .* dadz;
+
+                        for d = curr_depth-1:-1:1
+                            dadz = grad_activation(z{d});
+                            delta{d} = ( model.Wm' * delta{d+1} ) .* dadz;
+                        end
+
+                        model = calculate_gradient(model, x, a, delta, M_init, curr_depth);
+                    end
+
+                    model = update_gradient(model);
+
+                    M_init = M_next;
+
+                end % end of data in sequence
+
+            end % end of sequence
             
-            end % end of data in sequence
-            
-        end % end of sequence
-        
-        epoch_time = toc(epoch_time);
-        
-        % calculate E_in
-        costs = rnn_predict(model, X_train, Y_train);
-        model.cost(iter) = mean(costs);
-        
-        fprintf('epoch %d (%.1f s), cost = %f\n', ...
-                iter, epoch_time, model.cost(iter));
+            batch_time = toc(batch_time);
+
+            % calculate E_in
+            costs = rnn_predict(model, X_train, Y_train);
+            model.cost(iter) = mean(costs);
+
+            fprintf('epoch %d, batch %d (%.1f s), cost = %f\n', ...
+                    iter, batch, batch_time, model.cost(iter));
+
+        end % end of batch
         
         if( ~mod(iter, model.opts.epoch_to_save) )
             model_filename = fullfile(model.opts.model_dir, sprintf('epoch%d.rnn', iter));
             rnn_save_model(model_filename, model);
-        end
+        end        
+        
             
     end % end of epoch
 
@@ -190,27 +196,24 @@ function model = sgd(model)
     eta     = model.opts.learning_rate;
     mu      = model.opts.momentum;
     lambda  = 1 - model.opts.weight_decay * eta;
-    d       = model.opts.bptt_depth;
-    ds      = d * (d + 1) / 2;
-    thr     = model.opts.gradient_thr;
     
     % Wo, Bo
-    model.mWo = mu * model.mWo - eta * model.dWo / d;
-    model.mBo = mu * model.mBo - eta * model.dBo / d;
+    model.mWo = mu * model.mWo - eta * model.dWo;
+    model.mBo = mu * model.mBo - eta * model.dBo;
     
     model.Wo = lambda * model.Wo + model.mWo;
     model.Bo =          model.Bo + model.mBo;
     
     % Wm, Bm
-    model.mWm = mu * model.mWm - eta * model.dWm / ds;
-    model.mBm = mu * model.mBm - eta * model.dBm / ds;
+    model.mWm = mu * model.mWm - eta * model.dWm;
+    model.mBm = mu * model.mBm - eta * model.dBm;
     
     model.Wm = lambda * model.Wm + model.mWm;
     model.Bm =          model.Bm + model.mBm;
     
     % Wi, Bi
-    model.mWi = mu * model.mWi - eta * model.dWi / ds;
-    model.mBi = mu * model.mBi - eta * model.dBi / ds;
+    model.mWi = mu * model.mWi - eta * model.dWi;
+    model.mBi = mu * model.mBi - eta * model.dBi;
     
     model.Wi = lambda * model.Wi + model.mWi;
     model.Bi =          model.Bi + model.mBi;

@@ -1,4 +1,4 @@
-function [costs, Y_pred] = rnn_predict(model, X, Y)
+function [costs, Y_pred] = frnn_predict(model, X, Y)
     
     if( strcmpi(model.opts.activation, 'sigmoid' ) )
         activation      = @sigmoid;
@@ -16,7 +16,7 @@ function [costs, Y_pred] = rnn_predict(model, X, Y)
         
         x = X{i};
         n_data = size(X{i}, 1);
-        y_pred = zeros(n_data, model.opts.structure(end));
+        y_pred = zeros(n_data, model.opts.num_label);
         
         model.M = zeros(size(model.M)); % clear memory layer
 
@@ -31,11 +31,20 @@ function [costs, Y_pred] = rnn_predict(model, X, Y)
             model.M = a; % store in memory layer
 
             % last layer
-            z = model.Wo * a + model.Bo;
-            y = softmax(z);
+            zo = model.Wo * a + model.Bo;
+            y = softmax(zo);
+            
+            zc = model.Wc * a + model.Bc;
+            c_pred = softmax(zc);
+            
+            for k = 1:model.opts.num_class
+                idx = model.class{k};
+                y(idx) = y(idx) * c_pred(k);
+            end
+
             y_pred(j, :) = y';
         end
-        
+          
         Y_tr = expand_label(Y{i}, model.opts.num_label);
         costs(i) = cross_entropy_loss(Y_tr, y_pred);
         [~, Y_pred{i}] = max(y_pred, [], 2);

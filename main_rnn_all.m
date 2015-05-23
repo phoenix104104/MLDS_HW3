@@ -1,41 +1,26 @@
 addpath('util');
 
-% input_dir = '../data/easy2-c2-p1';
-% train_dir = fullfile(input_dir, 'train');
-% train_name = 'test2-c2-p1';
-% train_name_list = 'train';
-
 input_dir = '../feature_1_100_reduce/Vec';
 train_dir = fullfile(input_dir, 'train');
-data_list = 1;
-train_name = 'train_001'; % define by yourself
+data_list = 1:2;
+train_name = 'train_all'; % define by yourself
 train_name_list = {};
 for i = 1:length(data_list)
     train_name_list{i} = sprintf('train_%03d.mat', data_list(i));
 end
 
-tic
-%[Y_train, X_train] = rnn_load_data(train_dir, train_name_list);
-[Y_train, X_train] = rnn_load_binary_data(train_dir, train_name_list);
-toc
-Y_train = Y_train(1:500);
-X_train = X_train(1:500);
-
-
-%opts.num_label      = find_max_label(Y_train);
 opts.num_label      = 3784;
-opts.num_data       = length(Y_train);
-opts.num_dim        = size(X_train{1}, 2);
+opts.num_dim        = 100;
 opts.learning_rate  = 0.01;
 opts.epoch          = 100;
-opts.epoch_to_save  = 10;
+opts.epoch_to_save  = 5;
 opts.weight_decay   = 0.0005;
 opts.momentum       = 0.9;
 opts.rmsprop_alpha  = 0.9;
 opts.bptt_depth     = 3;
 opts.gradient_thr   = 0.5;
-opts.hidden         = 50;
-opts.structure      = [opts.num_dim, opts.hidden, opts.num_label];
+opts.hidden         = 100;
+opts.structure      = [num_dim, opts.hidden, num_label];
 opts.activation     = 'sigmoid'; % options: sigmoid, relu
 opts.update_grad    = 'sgd'; % options: sgd, rmsprop
 
@@ -54,7 +39,7 @@ end
 
              
 model = rnn_init(opts);
-model = rnn_train(model, X_train, Y_train);
+model = rnn_train_all(model, train_dir, train_name_list);
 
 
 test_dir = fullfile(input_dir, 'test');
@@ -82,6 +67,6 @@ end
 filename = fullfile(opts.model_dir, sprintf('epoch%d.csv', opts.epoch));
 save_kaggle_csv(filename, result);
 
-%answer = dlmread(fullfile(input_dir, 'testing_ans'))+1;
+% answer = dlmread(fullfile(input_dir, 'testing_ans'));
 answer = dlmread('google.ans');
 acc = mean(answer == result)

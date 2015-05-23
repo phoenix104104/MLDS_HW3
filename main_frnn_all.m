@@ -2,7 +2,7 @@ addpath('util');
 
 input_dir = '../feature_1_100_reduce/Vec';
 train_dir = fullfile(input_dir, 'train');
-data_list = 1:2;
+data_list = 1:73;
 train_name = 'train_all'; % define by yourself
 train_name_list = {};
 for i = 1:length(data_list)
@@ -12,7 +12,7 @@ end
 class_filename = 'class_map/class_mapping_100';
 class_map = dlmread(class_filename);
 
-opts.num_class      = 3784;
+opts.num_label      = 3784;
 opts.num_dim        = 100;
 opts.num_class      = max(class_map);
 opts.learning_rate  = 0.01;

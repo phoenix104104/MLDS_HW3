@@ -4,23 +4,35 @@ Environment:
     GNU make 4.0
 
 Language:
-    C
+    Python
+    Matlab
+
+Package:
+    NLTK
+    gensim
 
 Directory tree and file list:
     because the path is hard coded in makefile and some python codes, 
     you have to make sure the directory tree is the same to guarantee 
     proper program behavior. 
     
-    /                   : root folder of all programs and data
-    /Readme             : this file
-    /Report.pdf         : HW2 report
-    /48_idx_chr.map_b   : mapping file
-    /label/             : label file of training data
-    /fbank/             : fbank feature
-    /mfcc/              : mfcc feature
-    /feature/           : extracted feature
-    /src/svm-c/         : svm_struct source code
+    /                       : root folder of all programs and data
+    /Readme                 : this file
+    /Report.pdf             : HW3 report
+    /Holmes_Training_Data/  : training data
+    /testing_data.txt       : testing data
+    /src/                   : all source code
+
+    /feature_1_100_2/       : feature generated after preprocessing
+    /feature_1_100_2/N      : 1-of-N feature
+    /feature_1_100_2/Vec    : word2vec feature
 
 Usage:
-    $ make
-    $ make run
+    if NLTK package is not installed:
+        $ pip install nltk
+        $ python -m nltk.downloader all
+
+    if gensim is not installed:
+        $ pip install gensim
+
+    $ python ./src/preprocess.py -f ./

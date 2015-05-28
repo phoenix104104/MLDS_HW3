@@ -36,3 +36,11 @@ Usage:
         $ pip install gensim
 
     $ python ./src/preprocess.py -f ./
+
+    After preprocessing, edit main_rnn.m to setup your parameters, input 
+    file folder and etc. Then start matlab and run:
+    
+    >> main_rnn
+
+    This will do both training and testing. 
+    For fRNN, do the similar things as RNN and use main_frnn.m instead. 
